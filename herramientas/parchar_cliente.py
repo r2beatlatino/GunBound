@@ -124,7 +124,7 @@ if __name__ == "__main__":
         salida = Path(__file__).resolve().parent.parent / "servidor" / "datos" / "precios_avatar.json"
         salida.write_text(json.dumps({"source": "GunBound Legacy v179 avatar.xfs, piezas permanentes, SÓLO ORO "
                                       "(herramientas/avatar_xfs.py)", "prices": precios},
-                                     ensure_ascii=False, separators=(",", ":")) + chr(10), encoding="utf-8")
+                                     ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
         print(f"✔ {salida}: {len(precios)} piezas, todas en oro")
     elif args[:1] == ["--comprobar"]:
         ruta = Path(args[1] if len(args) > 1 else DESTINO)
