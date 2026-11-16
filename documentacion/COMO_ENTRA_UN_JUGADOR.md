@@ -9,7 +9,22 @@ le da al juego el usuario y el server.
 ⚠ Cuenta Eñeños todavía no conoce esos dos `aud`: el cambio está en `integracion/cuenta_enenos_gunbound.patch`
 (sin aplicar: esa rama la trabaja otra sesión).
 
-## 2 · El canje (este server)
+## 2 · La ficha de personajes y el canje (este server)
+
+El launcher puede entrar por el flujo nuevo de personajes (para elegir o crear hasta 2 personajes) o por el canje
+directo con el pase (personaje 1). Todas las rutas aceptan el prefijo `/gunbound` o `/gunbound-prueba`.
+
+### Flujo con selección/creación de personaje (ver `CREAR_PERSONAJE.md`)
+
+1. `POST /gunbound/personajes` con `{"pase": "<JWT>"}` → devuelve `{"ficha", "personajes", "maximo", "pais_sugerido"}`.
+   La `ficha` dura **10 minutos** y reemplaza al pase de un solo uso para los pedidos siguientes.
+2. Si el jugador crea uno nuevo: `POST /gunbound/personajes/crear` con `{"ficha", "nick", "genero": "m"|"f", "pais"}`.
+   Si cambia la bandera desde el launcher: `POST /gunbound/personajes/pais` con `{"ficha", "personaje", "pais"}`.
+3. Al elegir personaje para jugar: `POST /gunbound/canje` con `{"ficha", "personaje": <id>}` → devuelve
+   `{"usuario": "<id del personaje>", "ticket": "Ab3dEf…(12)", "servidor": "juego.eñeños.link:8372", "nick": "…", "nuevo": false}`.
+   (Si el personaje no pertenece a esa cuenta, responde `403`.)
+
+### Flujo directo (sin selector de personaje)
 
 ```
 POST https://<host>/gunbound/canje            (o /gunbound-prueba/canje)    Content-Type: application/json
@@ -18,10 +33,12 @@ POST https://<host>/gunbound/canje            (o /gunbound-prueba/canje)    Cont
 → 401 pase inválido (firma, aud, vencido) · 409 pase ya usado · 403 suspendido · 503 el server no tiene la clave
 ```
 
-- `usuario` = el Eñeños ID (sólo dígitos). `ticket` = 12 letras y números (entra en la contraseña del juego).
+- `usuario` = el id del personaje (sólo dígitos: `cuenta` para el personaje 1, `1_000_000_000 + cuenta` para el 2).
+  `ticket` = 12 letras y números (entra en la contraseña del juego).
 - El boleto vale `GB_BOLETO_HORAS` (12 h) y se puede usar varias veces mientras el juego está abierto (el cliente
-  re-entra al mundo con él). Un canje nuevo de la misma cuenta lo reemplaza.
-- El que canjea por primera vez nace en la base con nick `GB<id>` y lo cambia en el chat con `/nombre`.
+  re-entra al mundo con él). Un canje nuevo del mismo personaje lo reemplaza.
+- Quien entra por primera vez con `{"pase"}` directo nace en la base con nick `GB<id>` y lo cambia en el chat con
+  `/nombre`.
 
 ## 3 · El launcher abre el juego
 

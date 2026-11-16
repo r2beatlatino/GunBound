@@ -1,8 +1,7 @@
-# Crear personaje desde el launcher — lo que hace falta (mapa, sin construir)
+# Crear personaje desde el launcher — hecho
 
-> 16-nov-2026. Para cuando el launcher tenga la ficha de GunBound. Benja: «poder elegir crear 2 char, ambos F o
-> ambos M, nick, y primero empiezan de pollito»; «la bandera se seleccionaba por IP: ¿sigue andando o se deja para
-> el menú de creación?».
+> 16-nov-2026. Implementado en el server (`ajustes.py`, `base.py`, `boletos.py`, `web.py`, `comandos.py`, `mundo.py` y
+> `datos/paises_iso.json`). Queda listo para que el launcher conecte la pantalla de personajes.
 
 ## 1 · Lo que el CLIENTE permite (MEDIDO, `MAPA_DEL_CLIENTE.md`)
 
@@ -10,51 +9,64 @@
   manda en el login (0x1012: nick, byte de género, los 4 WORD de rango, GP, oro). ⇒ La creación vive TODA afuera:
   launcher + este server.
 - **La bandera no la elige el cliente ni la saca de la IP**: es el 4.º WORD de rango que manda el server
-  (`servidor/datos/paises.json`, 0 = «?»). En los servers viejos que tenemos (TorHammer) el país se elegía en el
-  formulario de registro de la web; lo de «por IP» era del lado del server de Softnyx (no está en ningún binario
-  ni base que tengamos). ⇒ Se puede hacer igual que antes — el server sugiere uno por la IP — pero lo natural es
-  el menú de creación del launcher, con el país sugerido ya marcado.
-- Rango, GP y país **sólo se leen al entrar al mundo**: cambiarlos desde el panel se ve al volver a entrar.
+  (`servidor/datos/paises.json`, 0 = «?»). El server sugiere un país a partir de la cabecera `CF-IPCountry`
+  (tabla `servidor/datos/paises_iso.json`), y el menú de creación del launcher lo trae ya marcado.
+- Rango, GP y país **sólo se leen al entrar al mundo**: cambiarlos desde el launcher, el chat (`/pais`) o el panel
+  se ve al volver a entrar.
 
-## 2 · Persona ≠ personaje (como R2Beat)
+## 2 · Decisiones (16-nov) y modelo en `base.py`
 
-Hoy la base tiene UN jugador por Eñeños ID (`jugadores.enenos_id` es la clave). Para dos personajes:
+- **2 personajes por cuenta** (`PERSONAJES_POR_CUENTA = 2` en `ajustes.py`, configurable con `GB_PERSONAJES`).
+- **Cada personaje tiene lo suyo**: nick (`^[A-Za-z0-9_]{3,12}$`, único sin distinguir mayúsculas), género (`m` o `f`,
+  los dos iguales o distintos), país, inventario, oro y cash propios (`GB_ORO_INICIAL`, `GB_CASH_INICIAL`). Todos
+  nacen **pollito** (GP 0 → rango 19).
+- **El país se puede cambiar después**: desde el launcher (`POST /personajes/pais`) o dentro del juego con
+  `/pais <0-241>` (se ve al volver a entrar).
+- **GM por cuenta**: `es_gm` se evalúa sobre `cuenta in self.gm`, así que los dos personajes de una cuenta GM tienen
+  rango 20 y comandos de GM.
+- **Rangos por GP fijo** (`servidor/rangos.py`). Opción futura: rangos altos «por puesto, como el original» (desde
+  6900 GP, actualización diaria; la tabla está en `investigacion/CUENTA_RANGOS_BANDERA_OPCODES.md` §1.3).
 
-```
-personajes (id INTEGER PRIMARY KEY  ← el "usuario" del juego (dígitos), desde 10.000.000 como el Eñeños ID nuevo
-            enenos_id               ← la persona; a lo sumo 2 por persona (GB_PERSONAJES_POR_CUENTA)
-            nick UNIQUE NOCASE, genero, pais, gp=0, oro, cash, avatar, …)
-```
-
-- Cada personaje tiene su propio inventario, oro, GP y rango: nace **pollito** (GP 0 → rango 19).
-- Género libre en cada uno: los dos varones, las dos mujeres o uno y uno.
-- La cuenta vieja (hoy `jugadores` por Eñeños ID) se muda como su personaje 1.
-- Lo que es de la PERSONA (baneo, cash comprado, GM) se decide aparte: ⚠ decisión de Benja (¿el cash es de la
-  cuenta o del personaje?; ¿un baneo cae sobre los dos?).
-
-## 3 · El contrato propuesto con el launcher
-
-El pase de Cuenta Eñeños es de un solo uso (`jti`), así que el primer pedido lo canjea por una ficha corta de
-launcher y el resto usa esa ficha.
+En SQLite (`jugadores`), por historia la clave `enenos_id` pasa a ser el **id del personaje** (es el «usuario» del
+juego que usan sesiones, boletos e inventario) y se agrega la columna `cuenta INTEGER` (el Eñeños ID de la persona,
+con índice `jugadores_cuenta`):
 
 ```
-POST /gunbound/personajes          {"pase": "<JWT>"}
-→ 200 {"ficha": "<para los próximos 10 min>", "personajes": [{"id", "nick", "genero", "pais", "rango", "gp"}],
-       "maximo": 2, "pais_sugerido": 9}
-
-POST /gunbound/personajes/crear    {"ficha", "nick", "genero": "m"|"f", "pais": 1..241}
-→ 200 {"personajes": [...]} · 409 nick ocupado · 400 nick inválido (3–12: letras, números, _) · 403 ya tiene 2
-
-POST /gunbound/canje               {"ficha", "personaje": <id>}      (o {"pase"} como hoy, = el personaje 1)
-→ 200 {"usuario": "<id del personaje>", "ticket", "servidor"}        ← igual que hoy: el resto no cambia
+personaje 1:  id = cuenta                      (las cuentas anteriores conservan el mismo id)
+personaje 2:  id = 1_000_000_000 + cuenta      (DESPLAZAMIENTO_2; entra cómodo en 16 dígitos)
 ```
 
-`pais_sugerido`: el país de la IP del pedido. Opciones, de menos a más trabajo: la cabecera de país que ya pone el
-proxy si va detrás de Cloudflare (`CF-IPCountry`), o una base GeoIP chica (p. ej. DB-IP Lite, libre) en el
-contenedor. Hace falta la tabla ISO-2 → número: las dos letras están dibujadas en `nationcode.img`
-(`investigacion/paises_*.png`), en el mismo orden que `paises.json`.
+El canje directo viejo (`POST /canje {"pase"}`) llama a `crear_si_falta`: crea el personaje 1 con nick `GB<cuenta>`
+si la cuenta todavía no tiene ninguno.
 
-## 4 · Para el panel (los comandos de hoy se vuelven botones)
+## 3 · El contrato HTTP con el launcher (`servidor/web.py`)
+
+El pase de Cuenta Eñeños es de un solo uso (`jti`), así que `POST /personajes` lo canjea por una **ficha de launcher**
+(`boletos.Fichas`: 24 caracteres alfanuméricos, válida **10 minutos** en memoria, `ficha → cuenta`). Todas las rutas
+aceptan también el prefijo `/gunbound` o `/gunbound-prueba`.
+
+```
+POST /personajes                   {"pase": "<JWT>"}
+→ 200 {"ficha": "<24 chars>",
+       "personajes": [{"id": <int>, "nick": "...", "genero": "m"|"f", "pais": <int>, "rango": <int>, "gp": <int>}],
+       "maximo": 2,
+       "pais_sugerido": <int>}     (0 si no viene CF-IPCountry o no está en paises_iso.json)
+→ 401 pase inválido · 409 pase ya usado · 403 cuenta suspendida · 503 sin clave pública
+
+POST /personajes/crear             {"ficha": "...", "nick": "...", "genero": "m"|"f", "pais": <0..241>}
+→ 200 {"personajes": [...]}
+→ 400 datos inválidos · 401 ficha vencida · 403 ya tiene el máximo (o suspendida) · 409 nick ocupado
+
+POST /personajes/pais              {"ficha": "...", "personaje": <id>, "pais": <0..241>}
+→ 200 {"personajes": [...]}
+→ 400 datos inválidos · 401 ficha vencida · 403 el personaje no es de esa cuenta (o suspendida)
+
+POST /canje                        {"ficha": "...", "personaje": <id>}   (o {"pase"} como antes → personaje 1)
+→ 200 {"usuario": "<id del personaje>", "ticket": "<12>", "servidor": "host:puerto", "nick": "...", "nuevo": false}
+→ 400 datos inválidos · 401 ficha vencida · 403 el personaje no es de esa cuenta (o suspendida)
+```
+
+## 4 · Pendiente para el panel (los comandos de hoy se vuelven botones)
 
 | hoy, en el chat del juego (GM) | en el panel |
 |---|---|
@@ -68,10 +80,3 @@ contenedor. Hace falta la tabla ISO-2 → número: las dos letras están dibujad
 
 Como en R2Beat (allá el panel sólo habla con `api_web.py`): el panel no toca la base, llama a una API del server
 (`GET/POST /gunbound/admin/...` en 127.0.0.1, detrás de Caddy con permisos).
-
-## 5 · Lo que falta decidir (Benja)
-
-1. ¿Dos personajes por cuenta, fijo, o configurable?
-2. ¿El cash es de la persona (compartido) o de cada personaje?
-3. ¿El país se puede cambiar después (y cuántas veces), o sólo un GM?
-4. ¿Rangos altos por GP fijo (como ahora) o por PUESTO como el original (desde 6900 GP, actualización diaria)?

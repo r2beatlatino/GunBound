@@ -64,9 +64,10 @@ def login(mundo, s, cuerpo):
         s.enviar(0x1012, NO_EXISTE)
         return
     s.version = datos[0x14] | (datos[0x15] << 8) if len(datos) >= 0x16 else 0
-    viejo = mundo.sesion_de(j.enenos_id)
-    if viejo is not None:
-        log("ENTRADA", f"{j.nick}: ya estaba adentro ({viejo.ip}); se corta la conexión vieja")
+    # Una PERSONA, un personaje adentro a la vez: el que entra corta al que estaba (sea el mismo personaje o el
+    # otro de la misma cuenta). Así nadie juega con sus dos personajes juntos (p. ej. en la misma sala).
+    for viejo in mundo.sesiones_de_cuenta(j.cuenta):
+        log("ENTRADA", f"{j.nick}: la cuenta {j.cuenta} ya estaba adentro con {viejo.nick} ({viejo.ip}); se corta")
         mundo.desconectar(viejo)
     s.jugador = j
     s.lugar_canal = _lugar_libre(mundo)

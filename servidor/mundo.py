@@ -145,6 +145,10 @@ class Mundo:
                 return s
         return None
 
+    def sesiones_de_cuenta(self, cuenta):
+        """Las sesiones de cualquier personaje de esa persona (Eñeños ID)."""
+        return [s for s in self.sesiones if s.jugador is not None and s.jugador.cuenta == cuenta]
+
     def sesion_por_nick(self, nick):
         nick = nick.lower()
         for s in self.sesiones:
@@ -157,7 +161,7 @@ class Mundo:
         return [s for s in self.sesiones if s.sala is None and s.lugar_canal >= 0]
 
     def es_gm(self, s):
-        return s.enenos_id in self.aj.gm
+        return bool(s.jugador and (s.jugador.es_gm or s.jugador.cuenta in self.aj.gm))
 
 
 def ajustes_dir(aj):

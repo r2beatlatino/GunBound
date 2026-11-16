@@ -9,6 +9,7 @@ from pathlib import Path
 
 _DIR_SERVIDOR = Path(__file__).resolve().parent
 DIR_DATOS_JUEGO = _DIR_SERVIDOR / "datos"          # tablas del juego que van DENTRO de la imagen (mapas, precios)
+PERSONAJES_POR_CUENTA = 2                          # tope por defecto (variable GB_PERSONAJES)
 
 
 def _ent(nombre, omision):
@@ -66,6 +67,7 @@ class Ajustes:
         # la cuenta nueva
         self.oro_inicial = _ent("GB_ORO_INICIAL", 100_000)
         self.cash_inicial = _ent("GB_CASH_INICIAL", 20_000)
+        self.personajes_por_cuenta = max(1, _ent("GB_PERSONAJES", PERSONAJES_POR_CUENTA))
         # los Eñeños ID que pueden usar los comandos de GM (coma)
         self.gm = _lista_enteros("GB_GM")
         # prueba y laboratorio: dejar /practica a todos (en prod también: es para un jugador solo)

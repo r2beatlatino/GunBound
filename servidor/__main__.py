@@ -11,7 +11,7 @@ import sys
 
 from .ajustes import cargar
 from .base import Base
-from .boletos import Boletos
+from .boletos import Boletos, Fichas
 from .broker import Broker
 from .mundo import Mundo
 from .pase import Verificador, bajar_clave_publica, parsear_clave_publica
@@ -26,6 +26,7 @@ class Server:
         self.aj = ajustes
         self.base = Base(ajustes.ruta_base, gm=ajustes.gm)
         self.boletos = Boletos(ajustes.boleto_horas)
+        self.fichas = Fichas()
         clave = clave_publica or parsear_clave_publica(ajustes.clave_publica)
         if clave is None and ajustes.url_cuentas:
             clave = bajar_clave_publica(ajustes.url_cuentas)
@@ -33,7 +34,7 @@ class Server:
         self.mundo = Mundo(ajustes, self.base, self.boletos)
         self.broker = Broker(ajustes, lambda: len(self.mundo.sesiones))
         self.web = Web(ajustes, self.verificador, self.boletos, self.base, lambda: len(self.mundo.sesiones),
-                       lambda: self.broker.puerto)
+                       lambda: self.broker.puerto, fichas=self.fichas)
 
     async def arrancar(self):
         await self.mundo.arrancar()

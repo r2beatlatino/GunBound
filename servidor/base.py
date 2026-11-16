@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 """base — los jugadores de GunBound, en SQLite (`<GB_ESTADO>/gunbound.db`). Es lo ÚNICO que no se reconstruye.
 
-La identidad es el Eñeños ID (el `sub` del pase): la cuenta es de Cuenta Eñeños, acá sólo vive lo del juego.
+La persona es `cuenta` (el Eñeños ID del `sub` del pase). Cada cuenta puede tener varios personajes
+(`ajustes.PERSONAJES_POR_CUENTA`, 2 por omisión). Por historia, la columna `enenos_id` de `jugadores` es el **id del
+personaje** (es el «usuario» del juego y la clave que usan sesiones, boletos e inventario):
+  · personaje 1: `id = cuenta` (así las cuentas anteriores a este cambio no se rompen)
+  · personaje 2: `id = DESPLAZAMIENTO_2 + cuenta` (`1_000_000_000 + cuenta`, ver `id_personaje`)
 ⛔ No hay contraseñas acá: el que entra trae un pase.
 
 El AVATAR (lo que el jugador tiene puesto) son 8 bytes: 4 casillas de 2 bytes (cuerpo, cabeza, ojos, bandera).
@@ -9,17 +13,35 @@ El bit 0x80 del segundo byte de cada casilla dice el género (0x80 = varón). Si
 `00 80 00 80 00 80 00 00` y una mujer `00 00 00 00 00 00 00 00`.
 Cada pieza del inventario son 4 bytes: código (2) + casilla (2).
 """
+import json
+import re
 import sqlite3
 import time
 from pathlib import Path
 
+from .ajustes import DIR_DATOS_JUEGO, PERSONAJES_POR_CUENTA
+
 AVATAR_VARON = bytes.fromhex("0080008000800000")
 AVATAR_MUJER = bytes(8)
 VARON, MUJER = 0, 1          # el byte de género del login (0x1012 +18): 0 = varón
+# los Eñeños ID son menores; el «usuario» del juego entra en 16 dígitos
+DESPLAZAMIENTO_2 = 1_000_000_000
+RX_NICK = re.compile(r"^[A-Za-z0-9_]{3,12}$")
+PAISES = {int(k) for k in json.loads((DIR_DATOS_JUEGO / "paises.json").read_text("utf-8"))["paises"]}
+
+
+def id_personaje(cuenta, n):
+    """El id del personaje `n` (1, 2, …) de esa cuenta."""
+    cuenta, n = int(cuenta), int(n)
+    if n < 1:
+        raise ValueError(f"número de personaje inválido: {n}")
+    return cuenta if n == 1 else (n - 1) * DESPLAZAMIENTO_2 + cuenta
+
 
 ESQUEMA = """
 CREATE TABLE IF NOT EXISTS jugadores (
     enenos_id       INTEGER PRIMARY KEY,
+    cuenta          INTEGER,
     nick            TEXT NOT NULL UNIQUE COLLATE NOCASE,
     genero          INTEGER NOT NULL DEFAULT 0,
     avatar          BLOB NOT NULL,
@@ -54,8 +76,8 @@ CREATE TABLE IF NOT EXISTS movimientos (
 
 
 class Jugador:
-    __slots__ = ("enenos_id", "nick", "genero", "avatar", "oro", "cash", "gp", "pais", "rango_fijo",
-                 "gremio", "baneado", "es_gm")
+    __slots__ = ("enenos_id", "cuenta", "nick", "genero", "avatar", "oro", "cash", "gp", "pais",
+                 "rango_fijo", "gremio", "baneado", "es_gm")
 
     def __init__(self, fila, es_gm=False):
         for k in self.__slots__:
@@ -79,19 +101,26 @@ class Base:
         self.con.execute("PRAGMA journal_mode=WAL")
         self.con.execute("PRAGMA foreign_keys=ON")
         self.con.executescript(ESQUEMA)
-        # migración para bases creadas antes de sumar país y rango fijo
+        # migración para bases creadas antes de sumar país, rango fijo y cuenta
         cols = {f["name"] for f in self.con.execute("PRAGMA table_info(jugadores)")}
         if "pais" not in cols:
             self.con.execute("ALTER TABLE jugadores ADD COLUMN pais INTEGER NOT NULL DEFAULT 0")
         if "rango_fijo" not in cols:
             self.con.execute("ALTER TABLE jugadores ADD COLUMN rango_fijo INTEGER")
+        if "cuenta" not in cols:
+            self.con.execute("ALTER TABLE jugadores ADD COLUMN cuenta INTEGER")
+            self.con.execute("UPDATE jugadores SET cuenta = enenos_id WHERE cuenta IS NULL")
+        self.con.execute("CREATE INDEX IF NOT EXISTS jugadores_cuenta ON jugadores(cuenta)")
 
     def cerrar(self):
         self.con.close()
 
     # ── jugadores ─────────────────────────────────────────────────────────────────────────────────────────
     def _armar(self, fila):
-        return Jugador(fila, es_gm=fila["enenos_id"] in self.gm) if fila else None
+        if not fila:
+            return None
+        cuenta = fila["cuenta"] if fila["cuenta"] is not None else fila["enenos_id"]
+        return Jugador(fila, es_gm=cuenta in self.gm)
 
     def jugador(self, enenos_id):
         f = self.con.execute("SELECT * FROM jugadores WHERE enenos_id=?", (int(enenos_id),)).fetchone()
@@ -101,17 +130,61 @@ class Base:
         f = self.con.execute("SELECT * FROM jugadores WHERE nick=?", (nick,)).fetchone()
         return self._armar(f)
 
-    def crear_si_falta(self, enenos_id, oro, cash):
-        """El que entra por primera vez nace con un nick provisorio (GB<id>) y lo cambia con /nombre."""
-        j = self.jugador(enenos_id)
-        if j:
-            return j, False
+    def personajes(self, cuenta):
+        """Los personajes de esa cuenta (persona), ordenados por id."""
+        filas = self.con.execute("SELECT * FROM jugadores WHERE cuenta=? ORDER BY enenos_id", (int(cuenta),)).fetchall()
+        return [self._armar(f) for f in filas]
+
+    def crear_personaje(self, cuenta, nick, mujer: bool, pais: int, oro, cash, maximo=PERSONAJES_POR_CUENTA):
+        """Crea un personaje para `cuenta` en el primer número libre. -> (Jugador | None, motivo | None)."""
+        if not isinstance(nick, str) or not RX_NICK.match(nick):
+            return None, "nick inválido (3 a 12: letras, números o _)"
+        if isinstance(pais, bool):
+            return None, "país inválido"
+        try:
+            pais = int(pais)
+        except (TypeError, ValueError):
+            return None, "país inválido"
+        if pais != 0 and pais not in PAISES:
+            return None, "país inválido"
+        cuenta = int(cuenta)
+        actuales = self.personajes(cuenta)
+        if len(actuales) >= maximo:
+            return None, f"ya tiene el máximo de {maximo} personajes"
+        if self.por_nick(nick) is not None:
+            return None, "ese nick ya está ocupado"
+        usados = {j.enenos_id for j in actuales}
+        pid = next(id_personaje(cuenta, n) for n in range(1, maximo + 1) if id_personaje(cuenta, n) not in usados)
+        genero = MUJER if mujer else VARON
+        avatar = AVATAR_MUJER if mujer else AVATAR_VARON
         ahora = int(time.time())
-        nick = f"GB{int(enenos_id)}"[:12]
-        self.con.execute("INSERT INTO jugadores (enenos_id, nick, genero, avatar, oro, cash, creado, ultimo) "
-                         "VALUES (?,?,?,?,?,?,?,?)", (int(enenos_id), nick, 0, AVATAR_VARON, oro, cash, ahora, ahora))
-        self.anotar(enenos_id, "nace", f"oro={oro} cash={cash}")
-        return self.jugador(enenos_id), True
+        try:
+            self.con.execute(
+                "INSERT INTO jugadores (enenos_id, cuenta, nick, genero, avatar, pais, oro, cash, creado, ultimo) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (pid, cuenta, nick, genero, avatar, pais, int(oro), int(cash), ahora, ahora),
+            )
+        except sqlite3.IntegrityError:
+            return None, "ese nick ya está ocupado"
+        self.anotar(pid, "nace", f"cuenta={cuenta} pais={pais} oro={int(oro)} cash={int(cash)}")
+        return self.jugador(pid), None
+
+    def crear_si_falta(self, enenos_id, oro, cash):
+        """Para el canje viejo con `{"pase"}` (sin ficha): crea el personaje 1 si la cuenta no tiene ninguno."""
+        cuenta = int(enenos_id)
+        actuales = self.personajes(cuenta)
+        if actuales:
+            return actuales[0], False
+        pid = id_personaje(cuenta, 1)
+        ahora = int(time.time())
+        nick = f"GB{cuenta}"[:12]
+        self.con.execute(
+            "INSERT INTO jugadores (enenos_id, cuenta, nick, genero, avatar, oro, cash, creado, ultimo) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (pid, cuenta, nick, VARON, AVATAR_VARON, oro, cash, ahora, ahora),
+        )
+        self.anotar(pid, "nace", f"cuenta={cuenta} oro={oro} cash={cash}")
+        return self.jugador(pid), True
 
     def tocar(self, enenos_id):
         self.con.execute("UPDATE jugadores SET ultimo=? WHERE enenos_id=?", (int(time.time()), int(enenos_id)))

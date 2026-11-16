@@ -7,9 +7,9 @@ Todo corre en UN proceso y UN hilo (asyncio): `python -m servidor` levanta las t
 | `__main__.py` | arranca broker + mundo + web; `Server` es lo que usan las pruebas | — |
 | `ajustes.py` | TODAS las variables `GB_*` (no hay IPs ni rutas escritas en otro lado) | — |
 | `broker.py` | la lista de mundos | 0x1013 → 0x1312 · 0x1100 → 0x1102 |
-| `web.py` | HTTP: el canje del pase y la salud | `POST /canje` · `GET /salud` |
+| `web.py` | HTTP: personajes, canje del pase y salud | `POST /personajes` · `/personajes/crear` · `/personajes/pais` · `POST /canje` · `GET /salud` |
 | `pase.py` | comprueba el pase de Cuenta Eñeños SOLO (firma Ed25519, aud, exp, jti) | — |
-| `boletos.py` | el boleto de 12 letras que reemplaza la contraseña | — |
+| `boletos.py` | el boleto de 12 letras (contraseña) y las fichas temporales del launcher | — |
 | `firma_ed25519.py` | Ed25519 en Python puro (copia del de R2Beat) | — |
 | `cifrado.py` | el AES estático y el dinámico, y el argumento del exe | — |
 | `paquete.py` | el sobre (largo, secuencia, comando) y el cortador del chorro TCP | — |

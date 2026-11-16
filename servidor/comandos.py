@@ -5,6 +5,7 @@ Las respuestas van por 0x5101 (texto del sistema). ⚠ Sólo ASCII/latin-1: el c
     /ayuda                 la lista
     /nombre <nick>         cambiar el nick (3 a 12: letras, números y _). Se ve al volver a entrar al mundo
     /genero m|f            varón o mujer (saca lo puesto). Se ve al volver a entrar
+    /pais <0-241>          cambia tu bandera (0 = sin país). Se ve al volver a entrar
     /saldo                 oro y cash
     /rango                 rango actual, GP, lo que falta para el próximo, país y puesto
     /practica              en una sala Jewel, solo: empieza sin rival (el botón pide 2 jugadores)
@@ -14,15 +15,12 @@ GM (los Eñeños ID de GB_GM):
     /quien                 quién está y desde dónde
     /dar <nick> <oro> [cash]
     /gp <nick> <n|+n|-n>        fija o suma/resta GP (se ve al volver a entrar)
-    /pais <nick> <0-241>        cambia la bandera (0 = sin país; se ve al volver a entrar)
+    /pais <nick> <0-241>        cambia la bandera de otro jugador (0 = sin país; se ve al volver a entrar)
     /rangofijo <nick> <n|auto>  fija un rango manual o vuelve al automático por GP
 """
-import re
-
 from . import partida, rangos
+from .base import RX_NICK
 from .registro import log
-
-RX_NICK = re.compile(r"^[A-Za-z0-9_]{3,12}$")
 
 
 def _decir(s, texto):
@@ -46,9 +44,9 @@ def comando(mundo, s, cuerpo):
 
 
 def ayuda(mundo, s, args):
-    _decir(s, "/nombre <nick>  /genero m|f  /saldo  /rango  /practica (Jewel, solo)  /movil <n>")
+    _decir(s, "/nombre <nick>  /genero m|f  /pais <0-241>  /saldo  /rango  /practica (Jewel, solo)  /movil <n>")
     if mundo.es_gm(s):
-        _decir(s, "GM: /aviso <texto>  /quien  /dar <nick> <oro> [cash]  /gp  /pais  /rangofijo")
+        _decir(s, "GM: /aviso <texto>  /quien  /dar <nick> <oro> [cash]  /gp  /pais <nick> <n>  /rangofijo")
 
 
 def nombre(mundo, s, args):
@@ -158,20 +156,32 @@ def gp(mundo, s, args):
 
 
 def pais(mundo, s, args):
-    if len(args) != 2 or not args[1].isdigit():
-        _decir(s, "Uso: /pais <nick> <0-241>")
+    if len(args) == 1 and args[0].isdigit():
+        n = int(args[0])
+        if n != 0 and n not in mundo.paises:
+            _decir(s, "Pais invalido (0 = sin pais, o 1..241).")
+            return
+        mundo.base.poner_pais(s.enenos_id, n)
+        nombre_p = mundo.paises.get(n) or "sin pais"
+        _decir(s, f"Listo: pais {n} ({nombre_p}). Sal del mundo y vuelve a entrar para verlo.")
         return
-    n = int(args[1])
-    if n != 0 and n not in mundo.paises:
-        _decir(s, "Pais invalido (0 = sin pais, o 1..241).")
+    if len(args) == 2 and mundo.es_gm(s) and args[1].isdigit():
+        n = int(args[1])
+        if n != 0 and n not in mundo.paises:
+            _decir(s, "Pais invalido (0 = sin pais, o 1..241).")
+            return
+        j = mundo.base.por_nick(args[0])
+        if j is None:
+            _decir(s, "No existe ese nick.")
+            return
+        mundo.base.poner_pais(j.enenos_id, n)
+        nombre_p = mundo.paises.get(n) or "sin pais"
+        _decir(s, f"{j.nick}: pais {n} ({nombre_p}). El jugador lo ve al volver a entrar.")
         return
-    j = mundo.base.por_nick(args[0])
-    if j is None:
-        _decir(s, "No existe ese nick.")
-        return
-    mundo.base.poner_pais(j.enenos_id, n)
-    nombre_p = mundo.paises.get(n) or "sin pais"
-    _decir(s, f"{j.nick}: pais {n} ({nombre_p}). El jugador lo ve al volver a entrar.")
+    if mundo.es_gm(s):
+        _decir(s, "Uso: /pais <0-241>  o  /pais <nick> <0-241>")
+    else:
+        _decir(s, "Uso: /pais <0-241>  (0 = sin pais)")
 
 
 def rangofijo(mundo, s, args):
@@ -200,7 +210,7 @@ def rangofijo(mundo, s, args):
     _decir(s, f"{j2.nick}: rango fijo {estado} (queda {rangos.NOMBRES.get(r_actual, str(r_actual))}). El jugador lo ve al volver a entrar.")
 
 
-COMANDOS = {"ayuda": ayuda, "help": ayuda, "nombre": nombre, "genero": genero, "saldo": saldo,
-            "rango": rango, "practica": practica, "movil": movil, "tankset": movil}
-COMANDOS_GM = {"aviso": aviso, "quien": quien, "dar": dar, "gp": gp, "pais": pais, "rangofijo": rangofijo}
+COMANDOS = {"ayuda": ayuda, "help": ayuda, "nombre": nombre, "genero": genero, "pais": pais,
+            "saldo": saldo, "rango": rango, "practica": practica, "movil": movil, "tankset": movil}
+COMANDOS_GM = {"aviso": aviso, "quien": quien, "dar": dar, "gp": gp, "rangofijo": rangofijo}
 ATIENDE = {0x5100: comando}
