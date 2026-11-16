@@ -1,0 +1,44 @@
+# El server de GunBound. UN archivo para los dos entornos: cada uno con su .env (ver despliegue/LEEME.md)
+#
+#   prod   (rama main)    → broker 8372 · mundo 8370 (TCP+UDP) · canje 8371
+#   prueba (rama develop) → broker 9372 · mundo 9370 (TCP+UDP) · canje 9371      (todo +1000)
+#
+#   docker compose -p gunbound-prod   --env-file /opt/gunbound/prod.env   -f despliegue/docker-compose.yml up -d --build
+#   docker compose -p gunbound-prueba --env-file /opt/gunbound/prueba.env -f despliegue/docker-compose.yml up -d --build
+services:
+  gunbound:
+    build:
+      context: ..
+      dockerfile: despliegue/Dockerfile
+    image: gunbound-server:${GB_ENTORNO:-local}
+    container_name: gunbound-${GB_ENTORNO:-local}
+    # ★ la red de la máquina tal cual (como EDA): el broker anuncia la IP y el puerto del mundo, y el cliente
+    #   habla UDP con ese mismo puerto. Sin traducción de puertos de por medio, lo anunciado es lo que hay.
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      GB_ENTORNO: ${GB_ENTORNO:-local}
+      GB_PUERTO_BROKER: ${GB_PUERTO_BROKER:-8372}
+      GB_PUERTO_MUNDO: ${GB_PUERTO_MUNDO:-8370}
+      GB_PUERTO_HTTP: ${GB_PUERTO_HTTP:-8371}
+      GB_ESCUCHA_HTTP: ${GB_ESCUCHA_HTTP:-127.0.0.1}
+      GB_IP_PUBLICA: ${GB_IP_PUBLICA:-}
+      GB_BROKER_PUBLICO: ${GB_BROKER_PUBLICO:-}
+      GB_PASE_JUEGO: ${GB_PASE_JUEGO:-}
+      GB_CUENTAS_CLAVE_PUBLICA: ${GB_CUENTAS_CLAVE_PUBLICA:-}
+      GB_CUENTAS_URL: ${GB_CUENTAS_URL:-}
+      GB_NOMBRE_MUNDO: ${GB_NOMBRE_MUNDO:-}
+      GB_DESCRIPCION_MUNDO: ${GB_DESCRIPCION_MUNDO:-}
+      GB_ANUNCIO_CANAL: ${GB_ANUNCIO_CANAL:-}
+      GB_ORO_INICIAL: ${GB_ORO_INICIAL:-}
+      GB_CASH_INICIAL: ${GB_CASH_INICIAL:-}
+      GB_GM: ${GB_GM:-}
+      GB_TRAZA: ${GB_TRAZA:-}
+      GB_P2P: ${GB_P2P:-}
+    volumes:
+      # los jugadores: AFUERA del contenedor y de la copia del repo, para que sobrevivan a cada actualización
+      #   y se puedan llevar a otro VPS
+      - ${GB_ESTADO_DIR:-./estado}:/datos
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}

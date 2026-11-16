@@ -1,0 +1,6 @@
+estado/
+_trabajo/
+**/__pycache__/
+*.pyc
+.git/
+herramientas/

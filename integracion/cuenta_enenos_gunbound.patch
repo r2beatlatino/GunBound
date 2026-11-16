@@ -1,0 +1,28 @@
+Parche para el repo de R2Beat (rama de la topología, `claude/topologia-docker-99488b`): que Cuenta Eñeños dé pases
+para GunBound. ⛔ NO aplicado: esa rama la está trabajando otra sesión. Se aplica con
+    git apply integracion/cuenta_enenos_gunbound.patch      (parado en la raíz del repo de R2Beat)
+y después: python pruebas/probar_cuenta_duena.py y python pruebas/probar_portero.py
+
+--- a/servidor/portero.py
++++ b/servidor/portero.py
+@@ -150,6 +150,10 @@ JUEGOS_DUENA = {
+     #   toda cuenta activa, como prod: cualquiera puede marcar «Servidor de prueba» en el launcher.
+     "r2beat2013-prueba": {"nombre": "R2Beat 2013 (servidor de prueba)", "abierto": True},
++    # ★ 16-nov: GunBound (repo propio, D:\Gunbound\gunbound-servidor). Mismo contrato: el pase se canjea en
++    #   POST /gunbound/canje por un boleto, como EDA. Abierto a toda cuenta activa, prod y prueba.
++    "gunbound": {"nombre": "GunBound", "abierto": True},
++    "gunbound-prueba": {"nombre": "GunBound (servidor de prueba)", "abierto": True},
+     "parches": {"nombre": "Servidor de parches", "abierto": True},
+     "web": {"nombre": "Web", "abierto": True},
+ }
+--- a/pruebas/probar_cuenta_duena.py
++++ b/pruebas/probar_cuenta_duena.py
+@@ -386,7 +386,8 @@
+     tok_jr_min = d_jr2["sesion"]
+     mapa_juegos = {j["id"]: j["permitido"] for j in d_jr1["juegos"]}
+-    ok(mapa_juegos == {"eda": False, "r2beat2013": True, "r2beat2013-prueba": True, "parches": True, "web": True},
++    ok(mapa_juegos == {"eda": False, "r2beat2013": True, "r2beat2013-prueba": True, "gunbound": True,
++                       "gunbound-prueba": True, "parches": True, "web": True},
+        "al entrar, una cuenta activa sin aprobar tiene abiertos r2beat2013, parches y web, y cerrado eda")
+     jw = pedir("GET", "/cuentas/clave-publica")[1]["keys"][0]
+     pub = pt._de_b64u(jw["x"])
