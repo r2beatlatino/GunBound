@@ -39,8 +39,14 @@ Y los DATOS: `graphics.xfs` con el ARTE ORIGINAL (`herramientas/arte_original/`,
 vuelven el `title.img`, el fondo de carga `load_back.img` y el del selector `serverlist_back.img` sin la marca
 Legacy. Del lobby (`gamelist_back.img`, el logo «GunBound LEGACY» en el chat) y de la sala (`ready_back.img`,
 «OPCIONES DE SALA») se cambia SÓLO el fondo 800×600 por el del 557; los botones y marcos siguen siendo los del
-Legacy (`mezclar_img.py`; Benja, 16-nov). `avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash
-en 0 y el permiso de cash apagado; las 3 que eran sólo cash, a 180 000 de oro. El server cobra con la misma tabla
+Legacy (`mezclar_img.py`; Benja, 16-nov).
+  ★ LOS MAPAS VUELVEN A STOCK (Benja, 16-nov: «si modificaron los mapas y sus fondos, regresalos a stock»). La
+  LISTA de mapas (`stage.dat`) es la del original: Legacy no agregó mapas. Pero en 7 mapas cambió el terreno
+  (`babob brick brickb facky fackyb hokb last lastb metro mos mosb`), la forma con la que pegan los tiros (`.lnd`) y
+  BORRÓ los adornos animados (vitrales de Brick, Metro, Mos, Facky: cuadros transparentes); y rehízo a juego las
+  miniaturas de la sala y 7 cargas `load_stage`. Todo eso sale del `graphics.xfs` del instalador GIS 557
+  (`STOCK`): cada archivo de mapa que difiere se reemplaza por el original (`archivos_de_mapa`).
+`avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash en 0 y el permiso de cash apagado; las 3 que eran sólo cash, a 180 000 de oro. El server cobra con la misma tabla
 (`--precios` la escribe en servidor/datos/precios_avatar.json).
 
 Lo que NO se copia: DualSoft.dll, el NyxLauncher y el Updater de Legacy (hablan con SUS servers), y los logs.
@@ -54,8 +60,30 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import avatar_xfs  # noqa: E402
 import rearmar_xfs  # noqa: E402
+import re  # noqa: E402
+import tempfile  # noqa: E402
+from xfs import XFS  # noqa: E402
 
 ARTE = Path(__file__).resolve().parent / "arte_original"
+# el graphics.xfs del instalador GunBound GIS WC 557 (lo sacó Codex de D:\Gunbound\GB; fuera del repo: es de Softnyx)
+STOCK = Path(r"D:\Gunbound\GB-originales\GIS557_graphics.xfs")
+SHA_STOCK = "5bb5e3075d7c33421dbed8376997637c8ee8008c53dbc9b752fe21c1c41554bb"
+# los 12 terrenos (los mismos nombres que sus .lnd), sus adornos (brick1…, metro1…) y lo que los muestra
+MAPAS = re.compile(r"^((babo|brick|candy|cave|dragon|facky|hok|kettle|last|metro|mos|star)b?\d*\.(img|lnd)"
+                   r"|load_stage\d+\.img|ready_stagemap\.img|gamelist_stagemap\.img)$")
+
+
+def archivos_de_mapa(legacy_xfs, stock_xfs):
+    """{nombre: bytes del original} de cada archivo de mapa que el Legacy tiene DISTINTO del stock.
+    Se deriva comparando (no es una lista a mano): si el Legacy trae otro cambio de mapa, entra solo."""
+    L, S = XFS(legacy_xfs), XFS(stock_xfs)
+    salida = {}
+    for n in L.entries:
+        if MAPAS.match(n) and n in S.entries:
+            original = S.read(n)
+            if L.read(n) != original:
+                salida[n] = original
+    return salida
 
 ORIGEN = Path(r"C:\GunBound-Legacy")
 DESTINO = Path(r"D:\Gunbound\Cliente-Enenos")
@@ -123,8 +151,18 @@ def armar(origen=ORIGEN, destino=DESTINO):
     if sha256(dx) != SHA_DXWND:
         raise SystemExit(f"⛔ {dx} no es el DxWnd que se midió")
     (destino / "dxwnd.dll").write_bytes(parchar(dx.read_bytes(), PARCHES_DXWND))
-    r = rearmar_xfs.rebuild(origen / "graphics.xfs", ARTE, destino / "graphics.xfs")
-    print(f"✔ graphics.xfs con el arte original: {', '.join(x['name'] for x in r['replacements'])}")
+    if sha256(STOCK) != SHA_STOCK:
+        raise SystemExit(f"⛔ {STOCK} no es el graphics.xfs del GIS 557 que se midió")
+    mapas = archivos_de_mapa(origen / "graphics.xfs", STOCK)
+    with tempfile.TemporaryDirectory() as tmp:
+        for p in ARTE.iterdir():
+            shutil.copy2(p, Path(tmp) / p.name)
+        for n, datos in mapas.items():
+            (Path(tmp) / n).write_bytes(datos)
+        r = rearmar_xfs.rebuild(origen / "graphics.xfs", tmp, destino / "graphics.xfs")
+    print(f"✔ graphics.xfs: arte original ({', '.join(p.name for p in ARTE.iterdir())}) y "
+          f"{len(mapas)} archivos de mapa a stock ({', '.join(sorted(mapas))})")
+    assert len(r["replacements"]) == len(list(ARTE.iterdir())) + len(mapas)
     oro, _ = avatar_xfs.solo_oro((origen / "avatar.xfs").read_bytes())
     (destino / "avatar.xfs").write_bytes(oro)
     print(f"✔ avatar.xfs sólo oro (sha256 {hashlib.sha256(oro).hexdigest()[:16]}…)")

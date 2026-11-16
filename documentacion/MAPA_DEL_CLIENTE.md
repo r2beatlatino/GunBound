@@ -13,6 +13,20 @@
 | el arte original (GIS 557) y el arranque de UNA pantalla; cómo rearmar `graphics.xfs` | `investigacion/ARTE_Y_ARRANQUE.md` (Codex) |
 | la tienda: formato de `avatar.xfs`, precios y permisos de moneda (todo en oro) | `investigacion/TIENDA_AVATAR_XFS.md` (Codex) |
 
+## Los mapas — vuelven a stock (MEDIDO, 16-nov)
+
+- La **lista** de mapas (`stage.dat`) es la del original: Legacy **no agregó** mapas. Son los 11 de siempre
+  (Miramo Town, Nirvana, Metropolis, Sea of Hero, Adium Root, Dragon, Cozy Tower, Dummy Slope, Star Dust,
+  Meta Mine, Cave al azar).
+- Pero comparando `graphics.xfs` contra el del instalador GIS 557, Legacy había **rehecho el terreno** de varios
+  (`babob brick brickb facky fackyb hokb last lastb metro mos mosb`), cambiado **por dónde pegan los tiros** (7
+  `.lnd`), **borrado los adornos animados** (vitrales de Cozy Tower, piezas de Metropolis, Meta Mine, Dummy Slope:
+  cuadros transparentes) y rehecho a juego las miniaturas de la sala y 7 cargas `load_stage`: 55 archivos.
+- ✅ `parchar_cliente.py` los vuelve al original (`archivos_de_mapa`: se derivan comparando, no es una lista a
+  mano). Medido en el juego: las 11 miniaturas de stock y una práctica en Metropolis con su terreno original.
+- Queda de Legacy (no es un mapa): un modo «stage» de un jugador (`stage1..10.lua`, `popup_stage_*`, `b_stage_*`,
+  tutoriales) que el original no tiene. El exe de Legacy lo conoce: no se borra sin medir antes que no lo pida.
+
 ## El viento — ya anda, y no es del server (MEDIDO)
 
 - El server sólo pone la **semilla** del 0x3432. Con ella cada cliente arma lo mismo: el viento inicial, los 12
