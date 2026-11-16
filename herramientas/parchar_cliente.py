@@ -37,7 +37,9 @@ Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el j
 Y los DATOS: `graphics.xfs` con el ARTE ORIGINAL (`herramientas/arte_original/`, del instalador GunBound WC GIS
 557): la única pantalla de arranque es el título de GunBound World Champion (en `logomode.img` y `logo.img`), y
 vuelven el `title.img`, el fondo de carga `load_back.img` y el del selector `serverlist_back.img` sin la marca
-Legacy. `avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash
+Legacy. Del lobby (`gamelist_back.img`, el logo «GunBound LEGACY» en el chat) y de la sala (`ready_back.img`,
+«OPCIONES DE SALA») se cambia SÓLO el fondo 800×600 por el del 557; los botones y marcos siguen siendo los del
+Legacy (`mezclar_img.py`; Benja, 16-nov). `avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash
 en 0 y el permiso de cash apagado; las 3 que eran sólo cash, a 180 000 de oro. El server cobra con la misma tabla
 (`--precios` la escribe en servidor/datos/precios_avatar.json).
 

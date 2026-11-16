@@ -57,7 +57,14 @@ def avisar_salida(mundo, s):
 
 
 def pedir_canal(mundo, s, cuerpo):
-    """0x2000: el jugador pide un canal (los dos últimos bytes)."""
+    """0x2000: el jugador pide un canal (los dos últimos bytes).
+
+    ★ MEDIDO (16-nov, Benja): al ABANDONAR una partida el Legacy no manda 0x3001 (salir de la sala): manda este
+      0x2000 directo. Si no se lo saca de la sala acá, el server lo sigue teniendo adentro y su próximo «Create»
+      (0x2120) se ignora callado ⇒ no puede crear ni entrar a otra sala hasta reconectar."""
+    if s.sala is not None:
+        from . import sala  # sala importa canal: acá adentro, para no hacer un ciclo
+        sala.sacar_de_sala(mundo, s)
     pedido = cuerpo[-2] | (cuerpo[-1] << 8) if len(cuerpo) >= 2 else 0xFFFF
     entrar(mundo, s, pedido)
 
