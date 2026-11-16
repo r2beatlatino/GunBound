@@ -12,7 +12,7 @@ La entrada a una sala (0x2111), medida en el Legacy (rama 0x004CB8C5):
     cupo · cantidad · y una ficha por ocupante
 La ficha de cada ocupante: ver `ficha_ocupante` (medida con dos clientes).
 """
-from . import canal
+from . import canal, rangos
 from .paquete import con_largo, fijo, texto_c, u8, u16
 from .registro import log
 from .sesion import AL_AZAR, SIN_LUGAR
@@ -93,7 +93,7 @@ def ficha_ocupante(x, en_la_lista=True):
          + u8(x.movil1) + u8(x.movil2) + u8(x.equipo))
     if en_la_lista:
         r += u8(1)
-    r += j.avatar + u16(j.rango) + u16(j.rango_temporada) + u16(0) + u16(0) + u16(0)
+    r += j.avatar + rangos.insignias(j) + u16(0)
     if en_la_lista:
         r += u8(0)
     return r
@@ -105,7 +105,7 @@ def u16_be(v):
 
 def _resto_ficha(x):
     j = x.jugador
-    return j.avatar + fijo(j.gremio, 8) + u16(j.rango) + u16(j.rango_temporada)
+    return j.avatar + fijo(j.gremio, 8) + rangos.insignias(j)[:4]
 
 
 # ── lo que pide el cliente ────────────────────────────────────────────────────────────────────────────────

@@ -27,11 +27,15 @@
 - Ícono = cuadro `valor + 5` de `rank2.img`: **19 pollito** · 18 madera … 0 rubí · −1 diamante · −2/−3 dragón
   azul/rojo · −4 dragón plateado (el mejor) · **20 GM** (el cliente le saca el límite de flood y le da permisos).
   Del 21 en adelante hay íconos especiales (VIP, estrellas, coronas) que el cliente no trata distinto.
-- Hoy mandamos 10 en el 1.º y **0 en el 3.º y 4.º** ⇒ se ve la varita de rubí con «?» (coincide con las fotos).
+- ✅ 16-nov: el server calcula el rango del GP (`servidor/rangos.py`, cortes de TorHammer) y lo manda con el país.
+  **Medido con el juego**: subiéndole el GP a una cuenta y volviendo a entrar, el ícono progresa de pollito a dragón
+  plateado con la bandera AR (`investigacion/escalera_de_rangos_medida.png`). Antes iba 0 ⇒ varita de rubí con «?».
+- ⚠ **El cliente no tiene tabla automática**: el original la corría el server de noche (BatchGIS). Acá se
+  recalcula sola cada vez que entra (`/gp` desde el chat de GM, mañana el panel).
 - GP por rango (INFERIDO, TorHammer): 0–1099 pollito, 1100 madera, 1200, 1500, 1800, 2300, 2800, 3500, 4200, 5100,
   6000; de ahí para arriba el original iba **por puesto** (#1 dragón plateado, #2–5 rojo, #6–25 azul, después por %).
-- El GP y el oro se ven en «Mi info» y salen **sólo** del 0x1012 (+61 GP, +69 oro): hoy van en cero, y el cambio
-  se ve recién al volver a entrar.
+- El GP y el oro se ven en «Mi info» y salen **sólo** del 0x1012 (+61 GP, +69 oro; +37 TRank, +49 CRank): ✅ ya van;
+  el cambio se ve recién al volver a entrar.
 
 ## La bandera «?» — es un país, no un ítem (MEDIDO)
 

@@ -24,7 +24,7 @@ class Server:
 
     def __init__(self, ajustes, clave_publica=None):
         self.aj = ajustes
-        self.base = Base(ajustes.ruta_base)
+        self.base = Base(ajustes.ruta_base, gm=ajustes.gm)
         self.boletos = Boletos(ajustes.boleto_horas)
         clave = clave_publica or parsear_clave_publica(ajustes.clave_publica)
         if clave is None and ajustes.url_cuentas:

@@ -40,6 +40,7 @@ servers por juego (prod y prueba) con el mismo código y otro `.env`.
 | `documentacion/MAPA_DEL_CLIENTE.md` | ★ viento, rangos (19 = pollito), bandera = país, GM, comandos «/», los plazos de la red vieja; el detalle en `investigacion/` |
 | `documentacion/PROBAR_CON_EL_JUEGO.md` | la mesa: varios clientes manejados por API, sin tocar el mouse |
 | `despliegue/LEEME.md` | Docker, prod y prueba, mudarse de máquina |
+| `documentacion/CREAR_PERSONAJE.md` | lo que hace falta para crear 2 personajes desde el launcher (contrato propuesto, decisiones pendientes) |
 | `documentacion/PENDIENTE.md` | lo que falta, en orden |
 
 ## 3 · El banco

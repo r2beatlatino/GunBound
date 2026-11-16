@@ -26,8 +26,11 @@ CREATE TABLE IF NOT EXISTS jugadores (
     oro             INTEGER NOT NULL DEFAULT 0,
     cash            INTEGER NOT NULL DEFAULT 0,
     gp              INTEGER NOT NULL DEFAULT 0,
+    -- rango y rango_temporada ya no se usan (quedan en el esquema por bases viejas; el rango sale de GP/rango_fijo)
     rango           INTEGER NOT NULL DEFAULT 10,
     rango_temporada INTEGER NOT NULL DEFAULT 10,
+    pais            INTEGER NOT NULL DEFAULT 0,
+    rango_fijo      INTEGER,
     gremio          TEXT NOT NULL DEFAULT '',
     baneado         INTEGER NOT NULL DEFAULT 0,
     creado          INTEGER NOT NULL,
@@ -51,13 +54,15 @@ CREATE TABLE IF NOT EXISTS movimientos (
 
 
 class Jugador:
-    __slots__ = ("enenos_id", "nick", "genero", "avatar", "oro", "cash", "gp", "rango", "rango_temporada",
-                 "gremio", "baneado")
+    __slots__ = ("enenos_id", "nick", "genero", "avatar", "oro", "cash", "gp", "pais", "rango_fijo",
+                 "gremio", "baneado", "es_gm")
 
-    def __init__(self, fila):
+    def __init__(self, fila, es_gm=False):
         for k in self.__slots__:
-            setattr(self, k, fila[k])
+            if k != "es_gm":
+                setattr(self, k, fila[k])
         self.avatar = bytes(self.avatar)
+        self.es_gm = bool(es_gm)
 
     @property
     def byte_genero(self):
@@ -65,7 +70,8 @@ class Jugador:
 
 
 class Base:
-    def __init__(self, ruta):
+    def __init__(self, ruta, gm=()):
+        self.gm = set(int(x) for x in gm)
         self.ruta = Path(ruta)
         self.ruta.parent.mkdir(parents=True, exist_ok=True)
         self.con = sqlite3.connect(str(self.ruta), isolation_level=None)
@@ -73,18 +79,27 @@ class Base:
         self.con.execute("PRAGMA journal_mode=WAL")
         self.con.execute("PRAGMA foreign_keys=ON")
         self.con.executescript(ESQUEMA)
+        # migración para bases creadas antes de sumar país y rango fijo
+        cols = {f["name"] for f in self.con.execute("PRAGMA table_info(jugadores)")}
+        if "pais" not in cols:
+            self.con.execute("ALTER TABLE jugadores ADD COLUMN pais INTEGER NOT NULL DEFAULT 0")
+        if "rango_fijo" not in cols:
+            self.con.execute("ALTER TABLE jugadores ADD COLUMN rango_fijo INTEGER")
 
     def cerrar(self):
         self.con.close()
 
     # ── jugadores ─────────────────────────────────────────────────────────────────────────────────────────
+    def _armar(self, fila):
+        return Jugador(fila, es_gm=fila["enenos_id"] in self.gm) if fila else None
+
     def jugador(self, enenos_id):
         f = self.con.execute("SELECT * FROM jugadores WHERE enenos_id=?", (int(enenos_id),)).fetchone()
-        return Jugador(f) if f else None
+        return self._armar(f)
 
     def por_nick(self, nick):
         f = self.con.execute("SELECT * FROM jugadores WHERE nick=?", (nick,)).fetchone()
-        return Jugador(f) if f else None
+        return self._armar(f)
 
     def crear_si_falta(self, enenos_id, oro, cash):
         """El que entra por primera vez nace con un nick provisorio (GB<id>) y lo cambia con /nombre."""
@@ -123,6 +138,33 @@ class Base:
         self.con.execute("UPDATE jugadores SET oro=MAX(0, oro+?), cash=MAX(0, cash+?), gp=MAX(0, gp+?) WHERE enenos_id=?",
                          (int(oro), int(cash), int(gp), int(enenos_id)))
         self.anotar(enenos_id, "saldo", f"oro{oro:+d} cash{cash:+d} gp{gp:+d} {motivo}".strip())
+
+    def poner_gp(self, enenos_id, gp):
+        gp = max(0, int(gp))
+        self.con.execute("UPDATE jugadores SET gp=? WHERE enenos_id=?", (gp, int(enenos_id)))
+        self.anotar(enenos_id, "gp", str(gp))
+
+    def poner_pais(self, enenos_id, pais):
+        pais = int(pais)
+        self.con.execute("UPDATE jugadores SET pais=? WHERE enenos_id=?", (pais, int(enenos_id)))
+        self.anotar(enenos_id, "pais", str(pais))
+
+    def poner_rango_fijo(self, enenos_id, rango):
+        val = None if rango is None else int(rango)
+        self.con.execute("UPDATE jugadores SET rango_fijo=? WHERE enenos_id=?", (val, int(enenos_id)))
+        self.anotar(enenos_id, "rango_fijo", "auto" if val is None else str(val))
+
+    def puestos(self, enenos_id):
+        """-> (puesto_total, puesto_en_su_pais); 1 = el de más GP. El de país es 0 si `pais` es 0."""
+        f = self.con.execute("SELECT gp, pais FROM jugadores WHERE enenos_id=?", (int(enenos_id),)).fetchone()
+        if f is None:
+            return 0, 0
+        total = self.con.execute("SELECT COUNT(*) + 1 FROM jugadores WHERE gp > ?", (f["gp"],)).fetchone()[0]
+        if f["pais"] == 0:
+            return total, 0
+        en_pais = self.con.execute("SELECT COUNT(*) + 1 FROM jugadores WHERE pais = ? AND gp > ?",
+                                   (f["pais"], f["gp"])).fetchone()[0]
+        return total, en_pais
 
     # ── inventario ────────────────────────────────────────────────────────────────────────────────────────
     def inventario(self, enenos_id):

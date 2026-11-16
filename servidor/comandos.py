@@ -6,16 +6,20 @@ Las respuestas van por 0x5101 (texto del sistema). ⚠ Sólo ASCII/latin-1: el c
     /nombre <nick>         cambiar el nick (3 a 12: letras, números y _). Se ve al volver a entrar al mundo
     /genero m|f            varón o mujer (saca lo puesto). Se ve al volver a entrar
     /saldo                 oro y cash
+    /rango                 rango actual, GP, lo que falta para el próximo, país y puesto
     /practica              en una sala Jewel, solo: empieza sin rival (el botón pide 2 jugadores)
     /movil <0-13|17|18>    fija el móvil principal en la sala
 GM (los Eñeños ID de GB_GM):
     /aviso <texto>         a todos los que están en el mundo
     /quien                 quién está y desde dónde
     /dar <nick> <oro> [cash]
+    /gp <nick> <n|+n|-n>        fija o suma/resta GP (se ve al volver a entrar)
+    /pais <nick> <0-241>        cambia la bandera (0 = sin país; se ve al volver a entrar)
+    /rangofijo <nick> <n|auto>  fija un rango manual o vuelve al automático por GP
 """
 import re
 
-from . import partida
+from . import partida, rangos
 from .registro import log
 
 RX_NICK = re.compile(r"^[A-Za-z0-9_]{3,12}$")
@@ -42,9 +46,9 @@ def comando(mundo, s, cuerpo):
 
 
 def ayuda(mundo, s, args):
-    _decir(s, "/nombre <nick>  /genero m|f  /saldo  /practica (Jewel, solo)  /movil <n>")
+    _decir(s, "/nombre <nick>  /genero m|f  /saldo  /rango  /practica (Jewel, solo)  /movil <n>")
     if mundo.es_gm(s):
-        _decir(s, "GM: /aviso <texto>  /quien  /dar <nick> <oro> [cash]")
+        _decir(s, "GM: /aviso <texto>  /quien  /dar <nick> <oro> [cash]  /gp  /pais  /rangofijo")
 
 
 def nombre(mundo, s, args):
@@ -69,6 +73,21 @@ def genero(mundo, s, args):
 def saldo(mundo, s, args):
     j = mundo.base.jugador(s.enenos_id)
     _decir(s, f"Oro: {j.oro}   Cash: {j.cash}")
+
+
+def rango(mundo, s, args):
+    j = mundo.base.jugador(s.enenos_id)
+    r = rangos.rango_de(j)
+    nombre_r = rangos.NOMBRES.get(r, str(r))
+    sig = rangos.siguiente(j.gp)
+    if sig is None:
+        avance = "es el maximo"
+    else:
+        sig_r, falta = sig
+        avance = f"faltan {falta} GP para {rangos.NOMBRES.get(sig_r, str(sig_r))}"
+    pais_nombre = mundo.paises.get(j.pais) or "sin pais"
+    puesto, _ = mundo.base.puestos(j.enenos_id)
+    _decir(s, f"Rango: {nombre_r} - GP {j.gp} - {avance} - Pais: {pais_nombre} - Puesto #{puesto}")
 
 
 def practica(mundo, s, args):
@@ -114,7 +133,74 @@ def dar(mundo, s, args):
     _decir(s, f"{j.nick}: oro {oro_:+d}, cash {cash_:+d}")
 
 
+def gp(mundo, s, args):
+    if len(args) != 2:
+        _decir(s, "Uso: /gp <nick> <n|+n|-n>")
+        return
+    val = args[1]
+    relativo = val.startswith(("+", "-"))
+    num_txt = val[1:] if relativo else val
+    if not num_txt.isdigit():
+        _decir(s, "Uso: /gp <nick> <n|+n|-n>")
+        return
+    j = mundo.base.por_nick(args[0])
+    if j is None:
+        _decir(s, "No existe ese nick.")
+        return
+    n = int(val)
+    if relativo:
+        mundo.base.sumar(j.enenos_id, gp=n, motivo=f"GM {s.enenos_id}")
+    else:
+        mundo.base.poner_gp(j.enenos_id, n)
+    j2 = mundo.base.jugador(j.enenos_id)
+    r_actual = rangos.rango_de(j2)
+    _decir(s, f"{j2.nick}: GP {j2.gp} ({rangos.NOMBRES.get(r_actual, str(r_actual))}). El jugador lo ve al volver a entrar.")
+
+
+def pais(mundo, s, args):
+    if len(args) != 2 or not args[1].isdigit():
+        _decir(s, "Uso: /pais <nick> <0-241>")
+        return
+    n = int(args[1])
+    if n != 0 and n not in mundo.paises:
+        _decir(s, "Pais invalido (0 = sin pais, o 1..241).")
+        return
+    j = mundo.base.por_nick(args[0])
+    if j is None:
+        _decir(s, "No existe ese nick.")
+        return
+    mundo.base.poner_pais(j.enenos_id, n)
+    nombre_p = mundo.paises.get(n) or "sin pais"
+    _decir(s, f"{j.nick}: pais {n} ({nombre_p}). El jugador lo ve al volver a entrar.")
+
+
+def rangofijo(mundo, s, args):
+    if len(args) != 2:
+        _decir(s, "Uso: /rangofijo <nick> <n|auto>")
+        return
+    if args[1].lower() == "auto":
+        val = None
+    else:
+        try:
+            val = int(args[1])
+        except ValueError:
+            _decir(s, "Uso: /rangofijo <nick> <n|auto>")
+            return
+        if not -5 <= val <= 177:            # rank2.img tiene 183 cuadros (valor + 5): del 21 en adelante, VIP, coronas…
+            _decir(s, "Rango invalido (de -5 a 177, o auto).")
+            return
+    j = mundo.base.por_nick(args[0])
+    if j is None:
+        _decir(s, "No existe ese nick.")
+        return
+    mundo.base.poner_rango_fijo(j.enenos_id, val)
+    j2 = mundo.base.jugador(j.enenos_id)
+    r_actual = rangos.rango_de(j2)
+    estado = "auto" if val is None else str(val)
+    _decir(s, f"{j2.nick}: rango fijo {estado} (queda {rangos.NOMBRES.get(r_actual, str(r_actual))}). El jugador lo ve al volver a entrar.")
+
+
 COMANDOS = {"ayuda": ayuda, "help": ayuda, "nombre": nombre, "genero": genero, "saldo": saldo,
-            "practica": practica, "movil": movil, "tankset": movil}
-COMANDOS_GM = {"aviso": aviso, "quien": quien, "dar": dar}
+            "rango": rango, "practica": practica, "movil": movil, "tankset": movil}
+COMANDOS_GM = {"aviso": aviso, "quien": quien, "dar": dar, "gp": gp, "pais": pais, "rangofijo": rangofijo}
 ATIENDE = {0x5100: comando}

@@ -13,11 +13,12 @@ contraseña espera ⇒ el boleto vigente de ese Eñeños ID (`boletos.py`).
 
 La respuesta 0x1012 del cliente Legacy (v179), medida por su lector (rama 0x004F1FDE):
     +0  WORD estado (0 = adentro) · +2 DWORD único · +6 nick (12) · +18 género (0 = varón) · +19 gremio (8)
-    +27 rango · +29 rango de temporada · … ceros hasta 89 bytes
+    +27 insignias (8: rango total, temporada, ícono visible, país) · +37 puesto total (4) · +49 puesto país (4)
+    +61 GP (4) · +69 oro (4) · ceros hasta 89 bytes
     y CIFRADO: [funciones del mundo, % de GP, % de oro, cash, funciones, 0]
 """
-from . import canal, cifrado
-from .paquete import fijo, texto_c, u16, u32
+from . import canal, cifrado, rangos
+from .paquete import fijo, texto_c, u32
 from .registro import log
 
 ANTES_DEL_LOGIN = {0x1000, 0x1010, 0x0000}
@@ -73,13 +74,17 @@ def login(mundo, s, cuerpo):
     mundo.base.tocar(j.enenos_id)
     log("ENTRADA", f"{s} adentro · cliente v{s.version} · {len(mundo.sesiones)} en línea")
 
+    puesto_total, puesto_pais = mundo.base.puestos(j.enenos_id)
     r = bytearray(89)
     r[2:6] = s.unico
     r[6:18] = fijo(j.nick, 12)
     r[18] = j.byte_genero
     r[19:27] = fijo(j.gremio, 8)
-    r[27:29] = u16(j.rango)
-    r[29:31] = u16(j.rango_temporada)
+    r[27:35] = rangos.insignias(j)
+    r[37:41] = u32(puesto_total)
+    r[49:53] = u32(puesto_pais)
+    r[61:65] = u32(j.gp)
+    r[69:73] = u32(j.oro)
     cola = u32(FUNCIONES) + u32(100) + u32(100) + u32(j.cash) + u32(FUNCIONES) + bytes(4)
     s.enviar(0x1012, bytes(r) + s.cifrar(cola, 0x1012))
     avisar_cash(s)
@@ -99,7 +104,7 @@ def buscar(mundo, s, cuerpo):
         s.enviar_cifrado(0x1021, bytes(12 + 12 + 8 + 4), rtc=0)
         return
     s.enviar_cifrado(0x1021, fijo(otro.nick, 12) + fijo(otro.nick, 12) + fijo(otro.gremio, 8)
-                     + u16(otro.rango) + u16(otro.rango_temporada), rtc=0)
+                     + rangos.insignias(otro)[:4], rtc=0)
 
 
 def _lugar_libre(mundo):

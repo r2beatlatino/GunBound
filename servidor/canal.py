@@ -3,7 +3,7 @@
 
 0x2001 (entrar al canal), medido con el Legacy: [00 00][canal WORD][lugar más alto][cantidad] + una FICHA de
 30 bytes por jugador + el anuncio del canal en texto:
-    lugar (1) · nick (12) · género (1) · avatar (8) · rango (2) · rango de temporada (2) · 4 ceros
+    lugar (1) · nick (12) · género (1) · avatar (8) · insignias (8: rango total, temporada, ícono visible, país)
 ⚠ Con 33 bytes (la ficha del Serv2, con gremio y sin género) el Legacy lee corrido y no entra al lobby.
 
 0x200E (alguien llegó) y 0x200F (alguien se fue) les avisan a los que ya están. 0x200E lleva la misma ficha de
@@ -14,13 +14,14 @@
   ⇒ Al que entra se le presenta cada uno de los que ya estaban con un 0x200E, recién cuando ya está en el lobby
   (en su primer 0x6004 vacío, que es lo último que pide el lobby al armarse: `presentar`). Él va incluido.
 """
+from . import rangos
 from .paquete import fijo, u8, u16
 from .registro import log
 
 
 def ficha(s):
     j = s.jugador
-    return u8(s.lugar_canal) + fijo(j.nick, 12) + u8(j.byte_genero) + j.avatar + u16(j.rango) + u16(j.rango_temporada) + bytes(4)
+    return u8(s.lugar_canal) + fijo(j.nick, 12) + u8(j.byte_genero) + j.avatar + rangos.insignias(j)
 
 
 def entrar(mundo, s, pedido):
