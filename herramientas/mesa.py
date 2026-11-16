@@ -228,7 +228,7 @@ if __name__ == "__main__":
         ap = argparse.ArgumentParser()
         ap.add_argument("--canje", default="http://127.0.0.1:8371/canje")
         ap.add_argument("--cliente", default=r"D:\Gunbound\Cliente-Enenos")
-        ap.add_argument("--ventana", default="1024x768")
+        ap.add_argument("--ventana", default="1600x1200")
         o = ap.parse_args()
         print(f"mesa en http://127.0.0.1:{PUERTO}", flush=True)
         servir(Mesa(o.canje, o.cliente, o.ventana))

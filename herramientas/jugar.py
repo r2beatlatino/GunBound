@@ -31,13 +31,16 @@ CLIENTE = Path(r"D:\Gunbound\Cliente-Enenos")
 CLAVE_REGISTRO = r"Software\softnyx\Enenos"
 CLAVE_PRUEBA = RAIZ / "estado" / "clave_prueba.json"
 
-# lo que el NyxLauncher de Legacy dejaba en el registro (medido), menos lo que depende del server
+# lo que el NyxLauncher de Legacy dejaba en el registro (medido), menos lo que depende del server.
+# ⚠ Los TIPOS importan: los `bytes` van como REG_BINARY de UN byte (PowerShell los muestra como «{1}», pero NO son el
+#   texto «{1}»). Escritos como texto, el juego lee el «{» (0x7B) como modo de interfaz y dibuja el HUD mezclado
+#   (medido 16-nov: el panel WEAPON clásico vacío con el selector redondo encima).
 REGISTRO_BASE = {
-    "ScreenMode": "Windowed", "ScreenDetail": "1024x768", "MusicVolume": 7, "EffectVolume": 100, "MouseSpeed": 50,
+    "ScreenMode": "Windowed", "ScreenDetail": "1600x1200", "MusicVolume": 7, "EffectVolume": 100, "MouseSpeed": 50,
     "Language": 1, "AppID1": 701, "AppID2": 702, "AppID3": 703, "LastServer": 0, "AutoRefresh": 1, "Version": 179,
-    "PlayBackStyle": 1, "Background": "{1}", "ChannelName": "{0}", "Effect3D": "{3}", "EffectUse": "{1}",
-    "GameName": "{0}", "InterfaceMode": "{1}", "MusicUse": "{0}", "MidiMode": "{1}", "ShootingMode": "{0}",
-    "ShowMoon": "{0}", "ShowOnlineUser": "{0}", "ShowTurn": "{1}", "LastID": "{0}",
+    "PlayBackStyle": 1, "Background": b"\x01", "ChannelName": b"\x00", "Effect3D": b"\x03", "EffectUse": b"\x01",
+    "GameName": b"\x00", "InterfaceMode": b"\x01", "MusicUse": b"\x00", "MidiMode": b"\x01", "ShootingMode": b"\x00",
+    "ShowMoon": b"\x00", "ShowOnlineUser": b"\x00", "ShowTurn": b"\x01", "LastID": b"\x00",
 }
 
 
@@ -50,9 +53,11 @@ def escribir_registro(cliente, host, puerto, ventana, interfaz=None):
         valores = dict(REGISTRO_BASE, ScreenDetail=ventana, IP=host, port=int(puerto), BuddyIP=host,
                        BuddyPort=int(puerto) - 20, Location=str(cliente) + "\\", Path=str(cliente) + "\\")
         if interfaz is not None:
-            valores["InterfaceMode"] = "{%s}" % interfaz
+            valores["InterfaceMode"] = bytes((int(interfaz),))
         for nombre, v in valores.items():
-            if isinstance(v, int):
+            if isinstance(v, bytes):
+                winreg.SetValueEx(k, nombre, 0, winreg.REG_BINARY, v)
+            elif isinstance(v, int):
                 winreg.SetValueEx(k, nombre, 0, winreg.REG_DWORD, v)
             else:
                 winreg.SetValueEx(k, nombre, 0, winreg.REG_SZ, v)
@@ -86,7 +91,7 @@ def main():
     ap.add_argument("--id", type=int, default=90000001)
     ap.add_argument("--veces", type=int, default=1)
     ap.add_argument("--cliente", default=str(CLIENTE))
-    ap.add_argument("--ventana", default="1024x768")
+    ap.add_argument("--ventana", default="1600x1200")
     a = ap.parse_args()
     cliente = Path(a.cliente)
     procesos = []

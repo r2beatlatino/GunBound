@@ -26,7 +26,11 @@ Los parches 1 a 3 son de Codex (laboratorio, 13-nov); 4 y 5, de esta sesión.
 
 La trae Legacy con **DxWnd** (`ddraw.dll` + `dxwnd.dll` + `dxwnd.dxw`): sin él el juego no arranca. DxWnd escala:
 el juego dibuja en 800×600 lógicos y la ventana mide 1600×1032; los clics llegan escalados (medido).
-`InterfaceMode` {0} y {1} en el registro: en la partida se ven iguales (comparado el 16-nov).
+⚠ **El registro tiene TIPOS**: `InterfaceMode`, `Background`, `ShootingMode`, `Effect3D`, `ShowTurn`… son binarios de
+UN byte (PowerShell los muestra como `{1}`, pero NO son ese texto). Escritos como texto, el juego lee el `{` (0x7B)
+como modo de interfaz y dibuja el HUD MEZCLADO (panel WEAPON clásico vacío con el selector redondo encima; medido el
+16-nov, lo vio Benja). Con el byte, el HUD sale como en el laboratorio de Codex. `ScreenDetail` = `1600x1200`
+(lo que trae el `dxwnd.dxw`).
 
 ## Cómo lee el mouse y el teclado (importa para probar sin tocar la PC)
 

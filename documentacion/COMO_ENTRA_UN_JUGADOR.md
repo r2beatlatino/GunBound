@@ -28,8 +28,10 @@ POST https://<host>/gunbound/canje            (o /gunbound-prueba/canje)    Cont
 1. Valida lo que llegó: `usuario` `^[0-9]{1,16}$`, `ticket` `^[A-Za-z0-9]{12}$`, `servidor` `^[A-Za-z0-9.\-]+:[0-9]{1,5}$`.
 2. Escribe el registro `HKCU\Software\softnyx\Enenos` (el cliente parchado lee ahí, ver CLIENTE.md):
    `IP` = host del `servidor` (⚠ el exe lo resuelve con gethostbyname: un nombre debería andar; sin medir), `port`
-   (DWORD) = su puerto, `ScreenMode` = `Windowed`, `Location`/`Path` = carpeta del cliente con `\` al final, y el
-   resto de `REGISTRO_BASE` de `herramientas/jugar.py`.
+   (DWORD) = su puerto, `ScreenMode` = `Windowed`, `ScreenDetail` = `1600x1200`, `Location`/`Path` = carpeta del
+   cliente con `\` al final, y el resto de `REGISTRO_BASE` de `herramientas/jugar.py`.
+   ⚠ RESPETAR LOS TIPOS: `InterfaceMode`, `Background`, `ShootingMode`… son REG_BINARY de un byte; como texto, el
+   HUD sale mezclado (CLIENTE.md).
 3. Arma el argumento: AES-128-ECB con la clave `FAEE85F24073D9161390197F6E562A67` de
    `usuario` (16, relleno con ceros) + `ticket` (16) + 16 ceros → HEX en MAYÚSCULA.
 4. Abre `GunBound.exe` con ESE texto como línea de comandos entera (en Rust: `raw_arg`, y el programa sin la ruta
