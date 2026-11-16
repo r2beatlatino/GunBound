@@ -22,4 +22,6 @@
 9. **Parches al exe a pensar** (la red vieja): el vigilante de reloj 0x416C60 (cierra con «hack» si la PC se traba),
    el tope de reenvío P2P, los 30 s del vigilante de votos.
 10. Ranking, gremios, amigos (Buddy, server aparte 0xA000..): no hay nada.
-11. **Repo en GitHub** (`r2beatlatino/…`, main + develop) y el cron del de prueba: lo decide Benja.
+11. ⚠ Antes de subir el repo a ningún lado: `herramientas/arte_original/` son imágenes de Softnyx (del instalador
+    GIS 557), igual que el cliente, que NO va al repo. Decidir si salen a una carpeta aparte.
+12. **Repo en GitHub** (`r2beatlatino/…`, main + develop) y el cron del de prueba: lo decide Benja.
