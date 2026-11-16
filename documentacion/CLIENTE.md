@@ -21,8 +21,16 @@ Eñeños, como el de R2Beat.
 | 5 | dxwnd.dll +0x4202A (`jne`→`jmp`) | DxWnd deja enganchar más de un juego | sin esto la 2.ª instancia la cierra DxWnd (`exit(0)`, medido con Frida) |
 | 6 | GunBound.exe 0x4D8FD (`add eax, 4E20` → `7D0`) | el P2P pasa al TÚNEL a los **2 s** sin noticias del compañero (era 20 s) | pedido de Benja: UDP directo primero, túnel rápido. El manejador (0x44D5E0) sólo prende «este va por túnel» y reenvía lo pendiente: no corta a nadie |
 | 7 | GunBound.exe 0x4D8CF (`add edx, 1388` → `3E8`) | ping al compañero cada **1 s** (era 5 s) | con plazo de 2 s y pings cada 5, un directo sano pero callado pasaría al túnel |
+| 8 | GunBound.exe 0xAB5EE (`push 6`→`push 2`) y 0xCF59E (`push 1`→`push 2`) | del logo DIRECTO al selector de servidor | Benja: «3 o 4 transiciones; lo ideal, una sola con arte original». Era logo → logo 2 → título → selector |
 
-Los parches 1 a 3 son de Codex (laboratorio, 13-nov); 4 a 7, del 16-nov.
+**Los datos que cambia** (además del exe): `graphics.xfs` con el arte ORIGINAL de GunBound WC (GIS 557,
+`herramientas/arte_original/`, rearmado con `herramientas/rearmar_xfs.py`): la única pantalla de arranque es el
+título de World Champion, y vuelven el fondo de carga de partida y el del selector («WORLD LIST»). `avatar.xfs`:
+la tienda SÓLO ORO (`herramientas/avatar_xfs.py`). Medido con el juego (16-nov): una pantalla y al selector
+(`investigacion/arranque_una_pantalla_medido.png`), «LOADING» original al entrar a una partida, «Gold only» en la
+tienda. ⚠ Quedan con arte de Legacy el fondo de la SALA («OPCIONES DE SALA») y el logo del lobby: otros recursos.
+
+Los parches 1 a 3 son de Codex (laboratorio, 13-nov); 4 a 7, del 16-nov; el 8, de Codex (16-nov).
 Medido con 6 y 7 (dos clientes, una PC): entró a la sala 02:59:10 → primer túnel 02:59:12 → la partida empezó al
 primer «Start»; turnos y disparos bien, 42 mensajes por el túnel, nadie se fue.
 

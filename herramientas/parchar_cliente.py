@@ -23,6 +23,10 @@ Los parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md):
   7. El PING al compañero cada 1 s (no cada 5): 0x44D8CF `add edx, 1388` → 0x3E8. Con un plazo de 2 s y pings
      cada 5, una conexión directa que anda pero está callada pasaría al túnel; con pings cada 1 s sólo pasa si
      de verdad se pierden.
+  8. UNA SOLA PANTALLA de arranque (Benja: «hace 3 o 4 transiciones antes del selector; lo ideal, una sola con
+     arte original»). El juego encadena logo (estado 5) → logo 2 (6) → título (1) → selector (2): en 0x4AB5EE
+     el `push 6` pasa a `push 2` (del logo directo al selector, conservando la salida del estado 5) y en 0x4CF59E
+     la rama que entra por el 6 (`push 1`) también va al 2. Lo encontró Codex (investigacion/ARTE_Y_ARRANQUE.md).
 
 Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el juego no arranca):
 
@@ -30,7 +34,10 @@ Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el j
      (medido con Frida: el ExitProcess de la 2.ª instancia sale de dxwnd.dll+0x4203F). En +0x4202A el
      `jne` (75 20) pasa a `jmp` (EB 20): el segundo sigue de largo.
 
-Y los DATOS: `avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash
+Y los DATOS: `graphics.xfs` con el ARTE ORIGINAL (`herramientas/arte_original/`, del instalador GunBound WC GIS
+557): la única pantalla de arranque es el título de GunBound World Champion (en `logomode.img` y `logo.img`), y
+vuelven el `title.img`, el fondo de carga `load_back.img` y el del selector `serverlist_back.img` sin la marca
+Legacy. `avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash
 en 0 y el permiso de cash apagado; las 3 que eran sólo cash, a 180 000 de oro. El server cobra con la misma tabla
 (`--precios` la escribe en servidor/datos/precios_avatar.json).
 
@@ -44,6 +51,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import avatar_xfs  # noqa: E402
+import rearmar_xfs  # noqa: E402
+
+ARTE = Path(__file__).resolve().parent / "arte_original"
 
 ORIGEN = Path(r"C:\GunBound-Legacy")
 DESTINO = Path(r"D:\Gunbound\Cliente-Enenos")
@@ -60,6 +70,8 @@ PARCHES = [
     ("varias instancias", 0xC3EC, bytes.fromhex("0f85ef0a0000"), bytes.fromhex("909090909090")),
     ("P2P: al túnel a los 2 s", 0x4D8FD, bytes.fromhex("05204e0000"), bytes.fromhex("05d0070000")),
     ("P2P: ping cada 1 s", 0x4D8CF, bytes.fromhex("81c288130000"), bytes.fromhex("81c2e8030000")),
+    ("arranque: del logo al selector", 0xAB5EE, bytes.fromhex("6a06"), bytes.fromhex("6a02")),
+    ("arranque: rama alternativa al selector", 0xCF59E, bytes.fromhex("6a01"), bytes.fromhex("6a02")),
 ]
 CLAVE_REGISTRO = r"Software\softnyx\Enenos"
 SHA_DXWND = "909349ff70190fe962bdc55748c740b9e4137126b2ac4a4cebb7e63c3df55898"
@@ -98,7 +110,7 @@ def armar(origen=ORIGEN, destino=DESTINO):
         raise SystemExit(f"⛔ {exe} no es el GunBound.exe de Legacy que se midió (sha256 distinto)")
     destino.mkdir(parents=True, exist_ok=True)
     for p in origen.iterdir():
-        if p.name in NO_COPIAR or p.name in ("GunBound.exe", "dxwnd.dll"):
+        if p.name in NO_COPIAR or p.name in ("GunBound.exe", "dxwnd.dll", "graphics.xfs"):
             continue
         if p.is_dir():
             shutil.copytree(p, destino / p.name, dirs_exist_ok=True)
@@ -109,6 +121,8 @@ def armar(origen=ORIGEN, destino=DESTINO):
     if sha256(dx) != SHA_DXWND:
         raise SystemExit(f"⛔ {dx} no es el DxWnd que se midió")
     (destino / "dxwnd.dll").write_bytes(parchar(dx.read_bytes(), PARCHES_DXWND))
+    r = rearmar_xfs.rebuild(origen / "graphics.xfs", ARTE, destino / "graphics.xfs")
+    print(f"✔ graphics.xfs con el arte original: {', '.join(x['name'] for x in r['replacements'])}")
     oro, _ = avatar_xfs.solo_oro((origen / "avatar.xfs").read_bytes())
     (destino / "avatar.xfs").write_bytes(oro)
     print(f"✔ avatar.xfs sólo oro (sha256 {hashlib.sha256(oro).hexdigest()[:16]}…)")

@@ -10,6 +10,7 @@
 | rangos, GP, bandera, nick/género, la tabla de mensajes | `investigacion/CUENTA_RANGOS_BANDERA_OPCODES.md` (+ `rangos_rank2.png`, `paises_*.png`) |
 | comandos «/», GM, mensajes raros, lo que hacía DualSoft | `investigacion/GM_COMANDOS_Y_EXTRAS.md` |
 | ★ cuánto GP y oro paga cada partida (lo calcula el CLIENTE; formato del 0x4412, topes) | `investigacion/PAGOS_GP_Y_ORO.md` (Codex) |
+| el arte original (GIS 557) y el arranque de UNA pantalla; cómo rearmar `graphics.xfs` | `investigacion/ARTE_Y_ARRANQUE.md` (Codex) |
 | la tienda: formato de `avatar.xfs`, precios y permisos de moneda (todo en oro) | `investigacion/TIENDA_AVATAR_XFS.md` (Codex) |
 
 ## El viento — ya anda, y no es del server (MEDIDO)
