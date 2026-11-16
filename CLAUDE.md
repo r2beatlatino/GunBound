@@ -35,12 +35,13 @@ servers por juego (prod y prueba) con el mismo código y otro `.env`.
 | **este archivo** | las reglas y el terreno |
 | `servidor/MAPA.md` | qué módulo abrir para cada cosa |
 | `documentacion/PROTOCOLO_LEGACY.md` | ★ los formatos MEDIDOS del cliente Legacy v179 (dónde está cada lector en el exe) |
+| ★ `documentacion/PARA_EL_LAUNCHER.md` | **la guía para la sesión del launcher**: todo lo que necesita para sumar GunBound |
 | `documentacion/COMO_ENTRA_UN_JUGADOR.md` | el contrato con el launcher y con Cuenta Eñeños |
 | `documentacion/CLIENTE.md` | el cliente: los 7 parches, DxWnd, varias instancias |
 | `documentacion/MAPA_DEL_CLIENTE.md` | ★ viento, rangos (19 = pollito), bandera = país, GM, comandos «/», los plazos de la red vieja; el detalle en `investigacion/` |
 | `documentacion/PROBAR_CON_EL_JUEGO.md` | la mesa: varios clientes manejados por API, sin tocar el mouse |
 | `despliegue/LEEME.md` | Docker, prod y prueba, mudarse de máquina |
-| `documentacion/CREAR_PERSONAJE.md` | lo que hace falta para crear 2 personajes desde el launcher (contrato propuesto, decisiones pendientes) |
+| `documentacion/CREAR_PERSONAJE.md` | los 2 personajes por cuenta: decisiones de Benja y el contrato (hecho) |
 | `documentacion/PENDIENTE.md` | lo que falta, en orden |
 
 ## 3 · El banco

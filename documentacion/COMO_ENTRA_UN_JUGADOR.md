@@ -1,5 +1,8 @@
 # Cómo entra un jugador — el contrato con el launcher y con Cuenta Eñeños
 
+> ★ Para el agente del launcher, la guía completa (pantalla de personajes, registro con sus tipos, lista del
+> cliente, cómo probar): `PARA_EL_LAUNCHER.md`.
+
 Es el mismo camino que EDA (`launcher_tauri/src-tauri/src/eda.rs`: `canjear` + `abrir`). Lo que cambia es cómo se
 le da al juego el usuario y el server.
 

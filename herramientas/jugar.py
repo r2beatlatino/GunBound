@@ -7,6 +7,8 @@
     python herramientas/jugar.py --veces 3                  tres clientes a la vez (90000001, 90000002, 90000003)
     python herramientas/jugar.py --id 90000005 --ventana 1024x768
     python herramientas/jugar.py --canje https://ensayo…/gunbound/canje --pase <JWT>     con un pase de verdad
+    python herramientas/jugar.py --solo-pase --id 90000005  sólo imprime un pase de PRUEBA (para probar el launcher
+                                                            contra el server local, sin Cuenta Eñeños)
 
 Los pases de PRUEBA se firman con la clave de `estado/clave_prueba.json` (la crea `laboratorio.py`): sólo sirven
 contra un server arrancado con esa clave pública. ⛔ Nunca en prod.
@@ -92,7 +94,11 @@ def main():
     ap.add_argument("--veces", type=int, default=1)
     ap.add_argument("--cliente", default=str(CLIENTE))
     ap.add_argument("--ventana", default="1600x1200")
+    ap.add_argument("--solo-pase", action="store_true", help="imprime un pase de prueba y no abre nada")
     a = ap.parse_args()
+    if a.solo_pase:
+        print(pase_de_prueba(a.id, a.juego))
+        return []
     cliente = Path(a.cliente)
     procesos = []
     for i in range(a.veces):

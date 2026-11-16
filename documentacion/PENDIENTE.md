@@ -6,8 +6,8 @@
 1. **Cuenta Eñeños**: aplicar `integracion/cuenta_enenos_gunbound.patch` (los `aud` `gunbound` y `gunbound-prueba`).
    Sin eso el launcher de verdad no consigue pases para GunBound (hoy se prueba con pases firmados por la clave de
    prueba).
-2. **El launcher**: una ficha para GunBound como la de EDA (`eda.rs`): canje → registro → exe. El contrato exacto
-   está en `COMO_ENTRA_UN_JUGADOR.md`; la referencia que anda, `herramientas/jugar.py`.
+2. **El launcher**: la ficha de GunBound (carta, instalar, pantalla de personajes, jugar). ✅ 16-nov la guía para la
+   sesión del launcher está lista: `PARA_EL_LAUNCHER.md` (con `/paises`, íconos de rango y la lista del cliente).
 3. **Repartir el cliente** por el servidor de parches (lista firmada), armado con `parchar_cliente.py`.
 4. **El VPS de ensayo**: sumar GunBound como pieza del conjunto (compose del controlador + Caddy `/gunbound/*`).
 5. ✅ **El premio** (16-nov): el cliente calcula y la llave manda 0x4412; el server acredita una vez con los topes

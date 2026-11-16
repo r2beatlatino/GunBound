@@ -3,7 +3,8 @@
 Escucha en 127.0.0.1: afuera va detrás de Caddy (HTTPS), porque la ficha y el boleto son secretos.
 
     GET  /salud                                     {"ok": true, "entorno", "juego", "en_linea"}
-    POST /personajes        {"pase"}                200 {"ficha", "personajes", "maximo", "pais_sugerido"}
+    GET  /paises                                    {"paises": [{"n", "nombre", "iso"}]}   (para el menú del launcher)
+    POST /personajes      {"pase"}                200 {"ficha", "personajes", "maximo", "pais_sugerido"}
     POST /personajes/crear  {"ficha", "nick", "genero": "m"|"f", "pais"}      200 {"personajes"}
     POST /personajes/pais   {"ficha", "personaje", "pais"}                     200 {"personajes"}
     POST /canje             {"pase"} | {"ficha", "personaje"}                  200 {"usuario", "ticket", "servidor", "nick", "nuevo"}
@@ -20,6 +21,13 @@ from .registro import log
 
 CUERPO_MAX = 8192
 PAISES_ISO = json.loads((DIR_DATOS_JUEGO / "paises_iso.json").read_text("utf-8"))
+_ISO_DE = {n: iso for iso, n in PAISES_ISO.items()}
+# la lista para el launcher: el número es el que va en el juego (la etiqueta de 2 letras que dibuja el cliente,
+# `nationcode.img`); `iso` = el código ISO-3166 (null en los pocos que no tienen uno claro); 0 = «?» (sin país)
+LISTA_PAISES = [{"n": 0, "nombre": "Sin país", "iso": None}] + [
+    {"n": int(n), "nombre": nombre, "iso": _ISO_DE.get(int(n))}
+    for n, nombre in sorted(json.loads((DIR_DATOS_JUEGO / "paises.json").read_text("utf-8"))["paises"].items(),
+                            key=lambda kv: int(kv[0]))]
 
 
 def _json(cuerpo):
@@ -94,6 +102,7 @@ class Web:
                 "genero": "f" if j.genero else "m",
                 "pais": j.pais,
                 "rango": rangos.rango_de(j),
+                "rango_nombre": rangos.NOMBRES.get(rangos.rango_de(j), "Especial"),
                 "gp": j.gp,
             }
             for j in self.base.personajes(cuenta)
@@ -108,6 +117,8 @@ class Web:
         ruta = ruta.split("?")[0]
         if metodo == "GET" and ruta == "/salud":
             return 200, {"ok": True, "entorno": self.aj.entorno, "juego": self.aj.pase_juego, "en_linea": self.contar()}
+        if metodo == "GET" and ruta == "/paises":
+            return 200, {"paises": LISTA_PAISES}
         if metodo != "POST":
             return 404, {"error": "no existe"}
         datos = _json(cuerpo)

@@ -48,7 +48,7 @@ aceptan también el prefijo `/gunbound` o `/gunbound-prueba`.
 ```
 POST /personajes                   {"pase": "<JWT>"}
 → 200 {"ficha": "<24 chars>",
-       "personajes": [{"id": <int>, "nick": "...", "genero": "m"|"f", "pais": <int>, "rango": <int>, "gp": <int>}],
+       "personajes": [{"id": <int>, "nick": "...", "genero": "m"|"f", "pais": <int>, "rango": <int>, "rango_nombre": "...", "gp": <int>}],
        "maximo": 2,
        "pais_sugerido": <int>}     (0 si no viene CF-IPCountry o no está en paises_iso.json)
 → 401 pase inválido · 409 pase ya usado · 403 cuenta suspendida · 503 sin clave pública
@@ -60,6 +60,8 @@ POST /personajes/crear             {"ficha": "...", "nick": "...", "genero": "m"
 POST /personajes/pais              {"ficha": "...", "personaje": <id>, "pais": <0..241>}
 → 200 {"personajes": [...]}
 → 400 datos inválidos · 401 ficha vencida · 403 el personaje no es de esa cuenta (o suspendida)
+
+GET  /paises                       (público) → 200 {"paises": [{"n", "nombre", "iso"}]}   el menú de países
 
 POST /canje                        {"ficha": "...", "personaje": <id>}   (o {"pase"} como antes → personaje 1)
 → 200 {"usuario": "<id del personaje>", "ticket": "<12>", "servidor": "host:puerto", "nick": "...", "nuevo": false}

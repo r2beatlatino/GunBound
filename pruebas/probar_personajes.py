@@ -5,6 +5,7 @@ import json
 import struct
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 from arnes import Banco, ServerDePrueba
 from robot import Robot
@@ -96,4 +97,19 @@ with ServerDePrueba() as srv:
     _, cg = post(srv, "/canje", {"ficha": g["ficha"], "personaje": d["personajes"][1]["id"]})
     _, lg = entrar(srv, cg)
     b.igual(struct.unpack("<h", bytes(lg[27:29]))[0], rangos.GM, "el 2.º personaje de una cuenta GM es GM (20)")
+    b.igual(d["personajes"][1]["rango_nombre"], "GM", "la lista trae el NOMBRE del rango (para la tarjeta)")
+
+    # ── la lista de países para el menú del launcher (GET, sin pase: es pública) ───────────────────────────
+    with urllib.request.urlopen(srv.url_canje.replace("/canje", "/gunbound/paises"), timeout=5) as r:
+        paises = json.loads(r.read())["paises"]
+    por_n = {p["n"]: p for p in paises}
+    b.igual(por_n[0], {"n": 0, "nombre": "Sin país", "iso": None}, "/paises: el 0 es «sin país» («?» en el juego)")
+    b.igual((por_n[9]["nombre"], por_n[9]["iso"]), ("Argentina", "AR"), "/paises: 9 = Argentina, AR")
+    b.igual((por_n[208]["iso"], por_n[157]["iso"]), ("UY", "PE"), "/paises: el número es el del juego (Uruguay, Perú)")
+    b.igual(len(paises), 1 + len(json.loads((Path(__file__).resolve().parent.parent / "servidor" / "datos" /
+                                              "paises.json").read_text("utf-8"))["paises"]),
+            "/paises: todos los de paises.json + el 0 (derivado, no a mano)")
+    b.ver(all(p["iso"] is None or (len(p["iso"]) == 2 and p["iso"].isupper()) for p in paises), "/paises: iso de 2 letras o null")
+    st, _ = post(srv, "/paises", {})
+    b.igual(st, 404, "control: /paises por POST no existe")
 b.fin()
