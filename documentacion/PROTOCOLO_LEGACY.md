@@ -47,10 +47,12 @@ usuario + contraseña + ficha (4 bytes del 0x1001), truncado a 16, DWORDs dados 
 | 0x3432 (cifrado) | ajustes(4) · mapa · cantidad WORD · 22 por jugador (casilla · nick 12 · equipo · móvil 1 · móvil 2 · X · Y · turno) · FFFF · semilla(4) · 6 × (2 + 0) | lector 0x004ECDAB + partida jugada |
 | túnel 0x4500 (manda) | `01 00` · **casilla destino** · datagrama (empieza con su largo: WORD & 0x3FFF) | emisor 0x44D530 |
 | túnel 0x4501 (recibe) | **casilla de quien manda** · datagrama. Con el byte de destino de más, el que recibe se CIERRA | lector 0x4106DC → 0x44D4C0 |
-| UDP directo | cada cliente escucha en 8363 y prueba el directo ~20 s antes de pasar al túnel; si después no hay respuesta, el invitado se va de la sala a los ~30 s | mesa |
+| UDP directo | cada cliente escucha en 8363. Bucle por compañero (0x44D89D): ping si hace 5 s que no le manda nada; si hace **20 s** que no recibe nada, 0x44D5E0 lo pasa al túnel para siempre (no lo corta). Con el original, si nadie empezaba la partida a los ~30 s de eso, el invitado se iba de la sala | lector + mesa |
 
-★ Por omisión el server anuncia la dirección P2P vacía (`GB_P2P=tunel`) y TODA la partida pasa por el túnel:
-atraviesa cualquier NAT. `GB_P2P=directo` anuncia la IP real (como el original): ⚠ sin medir con casas distintas.
+★ El cliente de Eñeños baja esos tiempos a **2 s** y ping cada **1 s** (parches 6 y 7): UDP directo primero y, si no
+anda, el túnel enseguida. Por omisión el server anuncia la IP real (`GB_P2P=directo`, como el original); para
+probar varios clientes en UNA PC va `GB_P2P=tunel` (dirección vacía: todo por el túnel). ⚠ El directo entre casas
+distintas, sin medir todavía.
 
 ## Lo que falta medir (ver PENDIENTE.md)
 

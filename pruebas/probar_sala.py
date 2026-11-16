@@ -19,7 +19,7 @@ def entrar(srv, enenos_id):
 AJUSTES_SOLO = bytes.fromhex("b2620000")
 AJUSTES_JEWEL = bytes.fromhex("b2620c00")
 
-with ServerDePrueba() as srv:
+with ServerDePrueba(p2p="tunel") as srv:
     a = entrar(srv, 90000001)          # GM en el banco
     c = entrar(srv, 90000002)
     a.todos(0x200E, 0.3)
@@ -55,7 +55,7 @@ with ServerDePrueba() as srv:
     #                   4 WORD · cantidad WORD · byte  = 1+12+1+4+2+4+2+3+1+8+8+2+1 = 49
     b.igual(texto_c(ocup[1:13]), "GB90000001", "ocupante 1: el nick")
     b.igual(ocup[13], 0, "ocupante 1: el byte de género va pegado al nick")
-    b.igual(bytes(ocup[14:20]), bytes(6), "GB_P2P=tunel (omisión): la dirección P2P va vacía (0.0.0.0:0)")
+    b.igual(bytes(ocup[14:20]), bytes(6), "GB_P2P=tunel: la dirección P2P va vacía (0.0.0.0:0)")
     b.igual(texto_c(ocup[49 + 1:49 + 13]), "GB90000002", "ocupante 2 empieza 49 bytes después (ficha de 49)")
     aviso = a.esperar(0x3010)
     b.igual(len(aviso), 47, "0x3010 al anfitrión: la misma ficha SIN «listo» ni el byte final (47)")
@@ -96,8 +96,8 @@ with ServerDePrueba() as srv:
     for x in (a, c, d):
         x.cerrar()
 
-# GB_P2P=directo: la IP real y el puerto 8363, como el original
-with ServerDePrueba(p2p="directo") as srv:
+# GB_P2P sin poner (= directo): la IP real y el puerto 8363, como el original
+with ServerDePrueba() as srv:
     a = entrar(srv, 90000006)
     c = entrar(srv, 90000007)
     a.mandar(0x2120, con_largo("Directo") + AJUSTES_SOLO + bytes(4) + b"\x02")
@@ -105,7 +105,7 @@ with ServerDePrueba(p2p="directo") as srv:
     c.mandar(0x2110, b"\0\0")
     ent = c.esperar(0x2111)
     ocup = ent[7 + ent[6] + 1 + 4 + 8 + 2:]
-    b.igual(bytes(ocup[14:20]), bytes([127, 0, 0, 1, 0x20, 0xAB]), "GB_P2P=directo: IP real y puerto 8363 (BE)")
+    b.igual(bytes(ocup[14:20]), bytes([127, 0, 0, 1, 0x20, 0xAB]), "por omisión (directo): IP real y puerto 8363 (BE)")
     a.cerrar()
     c.cerrar()
 

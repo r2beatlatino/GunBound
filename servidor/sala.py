@@ -81,10 +81,12 @@ def ficha_ocupante(x, en_la_lista=True):
     ⚠ Con la ficha del Serv2 (sin género, con gremio) el anfitrión veía el nombre con basura y el que entraba no
        veía al anfitrión. Los puertos van como estaban en el server medido (0x20AB = 8363).
 
-    ★ La dirección P2P (IP + puerto, dos veces) decide si los clientes se hablan DIRECTO o por el TÚNEL del server.
-      Por omisión (`GB_P2P=tunel`) va vacía (0.0.0.0:0): el directo falla al toque y todo pasa por el túnel, que
-      atraviesa cualquier NAT. Con la IP real, el cliente prueba el directo ~20 s y, si no contesta, se va de la
-      sala a los 30 s (medido con dos clientes detrás de la misma IP). `GB_P2P=directo` = la IP real, como el original."""
+    ★ La dirección P2P (IP + puerto, dos veces) decide cómo se hablan los clientes durante la sala y la partida.
+      Por omisión (`GB_P2P=directo`, como el original) va la IP real: prueban UDP directo y, si en 2 s no llega nada
+      del otro, pasan al TÚNEL del server (el cliente de Eñeños trae el parche 6: el original esperaba 20 s, y si
+      nadie empezaba la partida en los ~30 s siguientes el invitado se iba de la sala).
+      `GB_P2P=tunel`: va vacía (0.0.0.0:0) y todo pasa por el túnel. Es para probar varios clientes en UNA PC: ahí
+      comparten IP y puerto 8363, y el directo del anfitrión le vuelve a él mismo (medido)."""
     j = x.jugador
     ip, puerto = (_ip4(x.ip), PUERTO_P2P) if x.p2p_directo else (bytes(4), 0)
     r = (u8(x.casilla) + fijo(j.nick, 12) + u8(j.byte_genero) + ip + u16_be(puerto) + ip + u16_be(puerto)

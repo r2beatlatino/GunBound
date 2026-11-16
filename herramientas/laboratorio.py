@@ -38,5 +38,6 @@ if __name__ == "__main__":
         sys.exit(0)
     env = dict(os.environ, GB_ENTORNO=os.environ.get("GB_ENTORNO", "local"), GB_ESTADO=str(RAIZ / "estado"),
                GB_CUENTAS_CLAVE_PUBLICA=c["publica"], GB_GM=os.environ.get("GB_GM", "90000001"), GB_TRAZA=os.environ.get("GB_TRAZA", "1"),
+               GB_P2P=os.environ.get("GB_P2P", "tunel"),        # varios clientes en UNA PC: el directo no anda
                PYTHONIOENCODING="utf-8")
     sys.exit(subprocess.call([sys.executable, "-m", "servidor"], cwd=str(RAIZ), env=env))

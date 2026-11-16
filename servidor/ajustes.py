@@ -70,8 +70,9 @@ class Ajustes:
         self.gm = _lista_enteros("GB_GM")
         # prueba y laboratorio: dejar /practica a todos (en prod también: es para un jugador solo)
         self.max_conexiones = _ent("GB_MAX_CONEXIONES", 500)
-        # tunel (omisión) = los clientes se hablan por el server · directo = por UDP entre ellos (como el original)
-        self.p2p = _txt("GB_P2P", "tunel").lower()
+        # directo (omisión) = UDP entre los jugadores; si no contesta, el cliente (parche 6) pasa al túnel a los 2 s
+        # tunel = todo por el server desde el principio (para probar varios clientes en UNA PC: ahí el directo no anda)
+        self.p2p = _txt("GB_P2P", "directo").lower()
         # 1 = anota cada mensaje que entra y sale (para medir con el cliente de verdad; en prod, apagado)
         self.traza = _txt("GB_TRAZA") == "1"
         for k, v in cambios.items():

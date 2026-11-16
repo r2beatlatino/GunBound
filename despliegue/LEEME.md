@@ -25,6 +25,8 @@ La imagen corre el banco al armarse: si falla, no se arma y el contenedor anteri
 - El broker (8372/9372) y el mundo (8370/9370, TCP **y UDP**) van abiertos en el firewall.
 - El canje (8371/9371) escucha en 127.0.0.1: afuera va detrás de Caddy con HTTPS (el boleto es un secreto):
   `/gunbound/*` → 127.0.0.1:8371 y `/gunbound-prueba/*` → 127.0.0.1:9371 (el server acepta las rutas con prefijo).
+- Los jugadores se hablan por UDP directo (8363 en cada PC) y, si no anda en 2 s, por el túnel del server
+  (`GB_P2P`, ejemplo.env). Para probar varios clientes en una misma PC: `GB_P2P=tunel`.
 - `GB_IP_PUBLICA` es la IP (o nombre) que el broker le anuncia al juego para el mundo. En un VPS detrás de NAT
   (Oracle) hay que ponerla: la máquina no ve su IP pública.
 

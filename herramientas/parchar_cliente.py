@@ -5,7 +5,7 @@
     python herramientas/parchar_cliente.py ORIGEN DESTINO
     python herramientas/parchar_cliente.py --comprobar DESTINO (dice qué parches tiene un exe)
 
-Los cuatro parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md):
+Los parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md):
 
   1. SIN DualSoft.dll — la «protección» de Legacy: autenticación propia contra SU server (15.204.128.129), HWID,
      mascotas y bonos de GM. Se borra su descriptor de la tabla de imports (20 bytes en 0x4FE0C8). Sin ella el
@@ -16,6 +16,13 @@ Los cuatro parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md)
      de Eñeños no pisa ni lee la configuración del Legacy instalado.
   4. VARIAS INSTANCIAS — en 0x40C3EC el cliente pregunta «¿ya hay uno abierto?» (GetLastError == 183) y se cierra
      en silencio. Se anula ese salto (6 NOP). Hace falta para probar con varios jugadores en una PC.
+  6. El P2P pasa al TÚNEL a los 2 s (no a los 20). En el bucle de compañeros de sala (0x44D89D, clase CCommP2P):
+     si hace 20000 ms que no llega nada de uno (0x44D8FD `add eax, 4E20`), llama a 0x44D5E0, que prende «este va
+     por túnel» (bit en +0xE5C, no se apaga) y le reenvía por el túnel lo pendiente. NO corta a nadie (medido).
+     Benja (16-nov): «UDP P2P, pero sólo 2000 ms de espera para pasar al túnel». 0x4E20 → 0x7D0.
+  7. El PING al compañero cada 1 s (no cada 5): 0x44D8CF `add edx, 1388` → 0x3E8. Con un plazo de 2 s y pings
+     cada 5, una conexión directa que anda pero está callada pasaría al túnel; con pings cada 1 s sólo pasa si
+     de verdad se pierden.
 
 Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el juego no arranca):
 
@@ -43,6 +50,8 @@ PARCHES = [
       for i, o in enumerate((0xB55A, 0xBE67, 0xC667, 0xC861, 0xC947))],
     ("clave del registro", 0x1CE081, b"Legacy", b"Enenos"),
     ("varias instancias", 0xC3EC, bytes.fromhex("0f85ef0a0000"), bytes.fromhex("909090909090")),
+    ("P2P: al túnel a los 2 s", 0x4D8FD, bytes.fromhex("05204e0000"), bytes.fromhex("05d0070000")),
+    ("P2P: ping cada 1 s", 0x4D8CF, bytes.fromhex("81c288130000"), bytes.fromhex("81c2e8030000")),
 ]
 CLAVE_REGISTRO = r"Software\softnyx\Enenos"
 SHA_DXWND = "909349ff70190fe962bdc55748c740b9e4137126b2ac4a4cebb7e63c3df55898"

@@ -31,9 +31,10 @@ python herramientas/mesa.py cerrar
 ## Lo que se aprendió armando la partida de a dos
 
 - El invitado queda «Ready» con los clics de entrar; otro clic en Ready lo APAGA.
-- El túnel se arma ~20 s después de entrar a la sala; recién ahí el «Start» del anfitrión hace algo. Si en los ~30 s
-  siguientes no empieza, el invitado se va de la sala.
-- Dos clientes en la misma PC no pueden hablarse por UDP directo (los dos quieren el 8363): por eso el modo túnel.
+- Con el cliente parchado (6 y 7) el túnel se arma a los 2 s de entrar a la sala y el «Start» anda enseguida.
+  (Con el original eran 20 s, y si nadie empezaba en los ~30 s siguientes el invitado se iba.)
+- Dos clientes en la misma PC no pueden hablarse por UDP directo (los dos quieren el 8363): por eso el server de
+  laboratorio corre con `GB_P2P=tunel`.
 
 ## Los guiones (estado/, gitignorado)
 

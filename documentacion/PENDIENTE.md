@@ -13,6 +13,7 @@
 5. **El premio**: al terminar la partida (0x4412) el server no acredita oro ni GP. Hay que medir qué manda el
    cliente en el resultado.
 6. **Medir**: el paginado de salas (más de 9), el rechazo al entrar a una sala llena (hoy: aviso por chat),
-   regalos, `GB_P2P=directo` con casas distintas, y si el registro acepta un NOMBRE en `IP` (gethostbyname).
+   regalos, el UDP directo (la opción por omisión) entre casas distintas y detrás de un mismo router, y si el
+   registro acepta un NOMBRE en `IP` (gethostbyname).
 7. Rangos/GP, ranking, gremios, amigos (Buddy): no hay nada.
 8. **Repo en GitHub** (`r2beatlatino/…`, main + develop) y el cron del de prueba: lo decide Benja.
