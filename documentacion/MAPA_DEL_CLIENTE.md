@@ -9,6 +9,8 @@
 | viento, turnos, sincronía P2P, plazos de red | `investigacion/PARTIDA_VIENTO_Y_RED.md` |
 | rangos, GP, bandera, nick/género, la tabla de mensajes | `investigacion/CUENTA_RANGOS_BANDERA_OPCODES.md` (+ `rangos_rank2.png`, `paises_*.png`) |
 | comandos «/», GM, mensajes raros, lo que hacía DualSoft | `investigacion/GM_COMANDOS_Y_EXTRAS.md` |
+| ★ cuánto GP y oro paga cada partida (lo calcula el CLIENTE; formato del 0x4412, topes) | `investigacion/PAGOS_GP_Y_ORO.md` (Codex) |
+| la tienda: formato de `avatar.xfs`, precios y permisos de moneda (todo en oro) | `investigacion/TIENDA_AVATAR_XFS.md` (Codex) |
 
 ## El viento — ya anda, y no es del server (MEDIDO)
 

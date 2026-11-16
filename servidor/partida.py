@@ -9,11 +9,16 @@
 
 Lo que pasa adentro de la partida (disparos, movimientos) lo hablan los clientes ENTRE ELLOS por UDP (puerto 8363).
 Si no se ven (NAT), el cliente pide el TÚNEL (0x4500) y el server reenvía.
-⚠ El túnel y el cobro del premio al final no están medidos todavía con dos clientes de verdad: se anotan crudos
-   en el registro para medirlos.
+
+EL PREMIO (0x4412 → 0x4413). Lo CALCULA EL CLIENTE (medido por Codex en el exe, 16-nov:
+documentacion/investigacion/PAGOS_GP_Y_ORO.md): la llave manda, al terminar, un registro de 18 bytes por jugador con
+el oro y el GP YA GANADOS (victoria 3/6/9/12 GP y 100/150/200/300 de oro por 1vs1…4vs4, más remates, tiros, daño,
+joyas, penalizaciones; con los factores del login ya aplicados). El server no recalcula: valida y acredita UNA vez.
+Los topes son los de fábrica del Serv3 (`ANU_*`): un registro fuera de rango no se acredita (no se recorta).
 """
 import random
 import secrets
+import struct
 
 from .paquete import fijo, u8, u16
 from .registro import log
@@ -71,6 +76,8 @@ def empezar(mundo, s, cuerpo, solo=False):
     log("PARTIDA", f"sala {x.id}: empieza ({len(x.jugadores)} jugadores, mapa {x.mapa}, modo 0x{x.modo:02X}) · "
                    f"cuerpo del anfitrión {len(cuerpo)} bytes {bytes(cuerpo[:40]).hex()}")
     x.estado = JUGANDO
+    x.premio_cobrado = False
+    x.practica = solo
     inicio = armar_inicio(mundo, x, bytes(cuerpo), solo=solo)
     for o in x.jugadores:
         o.enviar_cifrado(0x3432, inicio)
@@ -89,12 +96,63 @@ def murio(mundo, s, cuerpo):
     s.enviar(0x4101)
 
 
+REGISTRO_RESULTADO = struct.Struct("<BihhIIB")     # casilla · oro (i32) · evento (i16) · GP (i16) · tiros · daño · resultado
+# Los topes de fábrica del Serv3 (GunBoundServ3.exe 0x403CA5, opciones ANU_*): por jugador y por partida.
+TOPE_GP, TOPE_ORO = 50, 6000                 # más que esto: no se acredita (anómalo)
+PISO_GP, PISO_ORO = -100, -2500              # menos que esto: tampoco
+AVISO_GP, AVISO_ORO = 30, 3000               # más que esto: se acredita pero queda anotado
+
+
+def leer_resultado(datos):
+    """El cuerpo DESCIFRADO del 0x4412 → [(casilla, oro, evento, gp, tiros, daño, resultado)], o None si no cierra.
+    (El descifrado trae relleno hasta múltiplo de 12: se ignora.)"""
+    if len(datos) < 2:
+        return None
+    n = datos[0] | datos[1] << 8
+    if not 1 <= n <= 8 or len(datos) < 2 + n * REGISTRO_RESULTADO.size:
+        return None
+    filas = [REGISTRO_RESULTADO.unpack_from(datos, 2 + i * REGISTRO_RESULTADO.size) for i in range(n)]
+    casillas = [f[0] for f in filas]
+    if len(set(casillas)) != n or any(c > 7 for c in casillas) or any(f[6] > 2 for f in filas):
+        return None
+    return filas
+
+
 def resultado(mundo, s, cuerpo):
-    """0x4412: el anfitrión pide el resultado; todos reciben 0x4413. ⚠ El premio NO se acredita todavía (sin medir)."""
-    log("PARTIDA", f"{s.nick} pide el resultado · {len(cuerpo)} bytes {bytes(cuerpo[:64]).hex()}")
-    if s.sala:
-        for o in s.sala.jugadores:
-            o.enviar(0x4413)
+    """0x4412: la llave manda el resultado (lo calculó su cliente). Se acredita oro y GP una vez; todos reciben 0x4413.
+    Sin acreditar: si no lo manda la llave, si no hay partida, si ya se cobró, o si es una /practica (solo)."""
+    x = s.sala
+    datos, ok = s.descifrar(cuerpo, 0x4412)
+    filas = leer_resultado(bytes(datos)) if ok else None
+    log("PARTIDA", f"{s.nick} manda el resultado · {len(cuerpo)} bytes · {filas}")
+    if x is None:
+        return
+    if x.llave is s and x.estado == JUGANDO and not getattr(x, "premio_cobrado", True) and filas:
+        x.premio_cobrado = True
+        if getattr(x, "practica", False) or len(x.jugadores) < 2:
+            log("PREMIO", f"sala {x.id}: práctica, no se acredita")
+        else:
+            _acreditar(mundo, x, filas)
+    for o in x.jugadores:
+        o.enviar(0x4413)
+
+
+def _acreditar(mundo, x, filas):
+    por_casilla = {o.casilla: o for o in x.jugadores}
+    for casilla, oro, evento, gp, tiros, dano, res in filas:
+        o = por_casilla.get(casilla)
+        if o is None or o.jugador is None:
+            continue
+        if not (PISO_GP <= gp <= TOPE_GP and PISO_ORO <= oro <= TOPE_ORO):
+            log("PREMIO", f"⚠ sala {x.id} {o.nick}: {gp:+d} GP {oro:+d} oro FUERA DE RANGO, no se acredita")
+            mundo.base.anotar(o.enenos_id, "premio_rechazado", f"gp{gp:+d} oro{oro:+d} sala {x.id}")
+            continue
+        if gp > AVISO_GP or oro > AVISO_ORO:
+            log("PREMIO", f"⚠ sala {x.id} {o.nick}: {gp:+d} GP {oro:+d} oro (alto, se acredita)")
+        mundo.base.sumar(o.enenos_id, oro=oro, gp=gp,
+                         motivo=f"partida sala {x.id} {('perdió', 'ganó', 'empate')[res]} tiros {tiros} daño {dano}")
+        o.jugador = mundo.base.jugador(o.enenos_id)          # el rango nuevo se ve en las fichas de sala
+        log("PREMIO", f"sala {x.id} {o.nick}: {gp:+d} GP {oro:+d} oro ({('perdió', 'ganó', 'empate')[res]})")
 
 
 def tunel(mundo, s, cuerpo):

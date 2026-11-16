@@ -30,12 +30,20 @@ Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el j
      (medido con Frida: el ExitProcess de la 2.ª instancia sale de dxwnd.dll+0x4203F). En +0x4202A el
      `jne` (75 20) pasa a `jmp` (EB 20): el segundo sigue de largo.
 
+Y los DATOS: `avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash
+en 0 y el permiso de cash apagado; las 3 que eran sólo cash, a 180 000 de oro. El server cobra con la misma tabla
+(`--precios` la escribe en servidor/datos/precios_avatar.json).
+
 Lo que NO se copia: DualSoft.dll, el NyxLauncher y el Updater de Legacy (hablan con SUS servers), y los logs.
 """
 import hashlib
+import json
 import shutil
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import avatar_xfs  # noqa: E402
 
 ORIGEN = Path(r"C:\GunBound-Legacy")
 DESTINO = Path(r"D:\Gunbound\Cliente-Enenos")
@@ -101,6 +109,9 @@ def armar(origen=ORIGEN, destino=DESTINO):
     if sha256(dx) != SHA_DXWND:
         raise SystemExit(f"⛔ {dx} no es el DxWnd que se midió")
     (destino / "dxwnd.dll").write_bytes(parchar(dx.read_bytes(), PARCHES_DXWND))
+    oro, _ = avatar_xfs.solo_oro((origen / "avatar.xfs").read_bytes())
+    (destino / "avatar.xfs").write_bytes(oro)
+    print(f"✔ avatar.xfs sólo oro (sha256 {hashlib.sha256(oro).hexdigest()[:16]}…)")
     print(f"✔ cliente armado en {destino}  ·  GunBound.exe sha256 {sha256(destino / 'GunBound.exe')}")
     print(f"  el original sigue igual: {sha256(exe) == SHA_ORIGINAL}")
     return destino
@@ -108,7 +119,14 @@ def armar(origen=ORIGEN, destino=DESTINO):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if args[:1] == ["--comprobar"]:
+    if args[:1] == ["--precios"]:
+        _, precios = avatar_xfs.solo_oro((ORIGEN / "avatar.xfs").read_bytes())
+        salida = Path(__file__).resolve().parent.parent / "servidor" / "datos" / "precios_avatar.json"
+        salida.write_text(json.dumps({"source": "GunBound Legacy v179 avatar.xfs, piezas permanentes, SÓLO ORO "
+                                      "(herramientas/avatar_xfs.py)", "prices": precios},
+                                     ensure_ascii=False, separators=(",", ":")) + chr(10), encoding="utf-8")
+        print(f"✔ {salida}: {len(precios)} piezas, todas en oro")
+    elif args[:1] == ["--comprobar"]:
         ruta = Path(args[1] if len(args) > 1 else DESTINO)
         exe = ruta / "GunBound.exe" if ruta.is_dir() else ruta
         for k, v in list(comprobar(exe).items()) + list(comprobar(exe.parent / "dxwnd.dll", PARCHES_DXWND).items()):

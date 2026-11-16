@@ -10,8 +10,8 @@
    está en `COMO_ENTRA_UN_JUGADOR.md`; la referencia que anda, `herramientas/jugar.py`.
 3. **Repartir el cliente** por el servidor de parches (lista firmada), armado con `parchar_cliente.py`.
 4. **El VPS de ensayo**: sumar GunBound como pieza del conjunto (compose del controlador + Caddy `/gunbound/*`).
-5. **El premio**: al terminar la partida (0x4412) el server no acredita oro ni GP. Hay que medir qué manda el
-   cliente en el resultado.
+5. ✅ **El premio** (16-nov): el cliente calcula y la llave manda 0x4412; el server acredita una vez con los topes
+   del Serv3 (`partida.py`, `investigacion/PAGOS_GP_Y_ORO.md`). Falta medirlo con una partida jugada hasta el final.
 6. **Medir**: el paginado de salas (más de 9), el rechazo al entrar a una sala llena (hoy: aviso por chat),
    regalos, el UDP directo (la opción por omisión) entre casas distintas y detrás de un mismo router, y si el
    registro acepta un NOMBRE en `IP` (gethostbyname).

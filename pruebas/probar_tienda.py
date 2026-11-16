@@ -10,9 +10,10 @@ from servidor.ajustes import DIR_DATOS_JUEGO
 
 b = Banco("probar_tienda")
 PRECIOS = json.loads((DIR_DATOS_JUEGO / "precios_avatar.json").read_text("utf-8"))["prices"]
-# una pieza de cuerpo (casilla 0) que se venda por oro y por cash
-PIEZA = next(bytes.fromhex(k) for k, v in PRECIOS.items() if v[0] and v[1] and k.endswith("0000"))
+# una pieza de cuerpo (casilla 0). Benja (16-nov): TODO se compra con oro; el cash es un placeholder.
+PIEZA = next(bytes.fromhex(k) for k, v in PRECIOS.items() if v[0] and k.endswith("0000"))
 ORO_PIEZA, CASH_PIEZA = PRECIOS[PIEZA.hex()]
+assert all(c == 0 for _, c in PRECIOS.values()), "la tabla del server tiene que ser SÓLO ORO"
 
 
 def entrar(srv, eid):
@@ -38,12 +39,12 @@ def inventario(r):
             for i in range(n)]
 
 
-srv = ServerDePrueba(oro_inicial=ORO_PIEZA + 10, cash_inicial=CASH_PIEZA - 1)
+srv = ServerDePrueba(oro_inicial=ORO_PIEZA + 10, cash_inicial=10 ** 9)
 with srv:
     r = entrar(srv, 90000010)
     b.igual(inventario(r), [], "inventario vacío al nacer")
     resp = compra(r, PIEZA, 1)
-    b.igual(bytes(resp[0:2]), b"\x03\x60", "control: con cash de menos → 0x6003 (no alcanza)")
+    b.igual(bytes(resp[0:2]), b"\x01\x00", "control: con cash (aunque sobre) no se vende: sólo oro")
     resp = compra(r, PIEZA, 0, plazo=1)
     b.igual(bytes(resp[0:2]), b"\x01\x00", "control: un plazo que no es «para siempre» → error")
     b.igual(inventario(r), [], "control: las compras rechazadas no agregan nada")
