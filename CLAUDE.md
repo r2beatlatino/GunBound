@@ -36,7 +36,8 @@ servers por juego (prod y prueba) con el mismo código y otro `.env`.
 | `servidor/MAPA.md` | qué módulo abrir para cada cosa |
 | `documentacion/PROTOCOLO_LEGACY.md` | ★ los formatos MEDIDOS del cliente Legacy v179 (dónde está cada lector en el exe) |
 | `documentacion/COMO_ENTRA_UN_JUGADOR.md` | el contrato con el launcher y con Cuenta Eñeños |
-| `documentacion/CLIENTE.md` | el cliente: los 5 parches, DxWnd, varias instancias |
+| `documentacion/CLIENTE.md` | el cliente: los 7 parches, DxWnd, varias instancias |
+| `documentacion/MAPA_DEL_CLIENTE.md` | ★ viento, rangos (19 = pollito), bandera = país, GM, comandos «/», los plazos de la red vieja; el detalle en `investigacion/` |
 | `documentacion/PROBAR_CON_EL_JUEGO.md` | la mesa: varios clientes manejados por API, sin tocar el mouse |
 | `despliegue/LEEME.md` | Docker, prod y prueba, mudarse de máquina |
 | `documentacion/PENDIENTE.md` | lo que falta, en orden |

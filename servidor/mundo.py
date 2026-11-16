@@ -19,7 +19,22 @@ import socket
 from . import canal, comandos, entrada, partida, sala, tienda
 from .paquete import Cortador
 from .registro import log
+from .sala import JUGANDO
 from .sesion import Sesion
+
+SILENCIO_MAXIMO = 600                    # fuera de partida: 10 min sin nada por TCP y se corta
+
+
+def _keepalive(sock):
+    """El keepalive TCP del sistema: a una PC que se apagó o perdió la red la descubre en ~2 min aunque el
+    juego no mande nada (jugando por P2P directo). En Linux se afinan los tiempos; en otros, lo que haya."""
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        for nombre, valor in (("TCP_KEEPIDLE", 60), ("TCP_KEEPINTVL", 15), ("TCP_KEEPCNT", 4)):
+            if hasattr(socket, nombre):
+                sock.setsockopt(socket.IPPROTO_TCP, getattr(socket, nombre), valor)
+    except OSError:
+        pass
 
 
 class Mundo:
@@ -70,14 +85,20 @@ class Mundo:
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             except OSError:
                 pass
+            _keepalive(sock)
         s = Sesion(escritor, escritor.get_extra_info("peername"), traza=self.aj.traza)
         s.p2p_directo = self.aj.p2p == "directo"
         cortador = Cortador()
         try:
             while not s.cerrada:
                 try:
-                    pedazo = await asyncio.wait_for(lector.read(4096), timeout=600)
+                    pedazo = await asyncio.wait_for(lector.read(4096), timeout=SILENCIO_MAXIMO)
                 except asyncio.TimeoutError:
+                    # ⚠ Jugando con P2P directo el cliente NO manda nada por TCP (no tiene keepalive propio:
+                    # sólo se entera de un corte por FD_CLOSE). Cortar acá echaría de una partida larga a todos.
+                    # A ése lo vigila el keepalive TCP del sistema (_keepalive), no este plazo.
+                    if s.sala is not None and s.sala.estado == JUGANDO:
+                        continue
                     log("MUNDO", f"{s}: 10 minutos sin nada, se corta")
                     break
                 if not pedazo:

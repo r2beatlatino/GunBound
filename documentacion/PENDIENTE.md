@@ -15,5 +15,12 @@
 6. **Medir**: el paginado de salas (más de 9), el rechazo al entrar a una sala llena (hoy: aviso por chat),
    regalos, el UDP directo (la opción por omisión) entre casas distintas y detrás de un mismo router, y si el
    registro acepta un NOMBRE en `IP` (gethostbyname).
-7. Rangos/GP, ranking, gremios, amigos (Buddy): no hay nada.
-8. **Repo en GitHub** (`r2beatlatino/…`, main + develop) y el cron del de prueba: lo decide Benja.
+7. **Rangos y bandera** (ver `MAPA_DEL_CLIENTE.md`): calcular el rango del GP (19 = pollito al empezar), mandarlo
+   en el 1.º y 3.º WORD de rango, el país en el 4.º (0 = «?»), y GP/oro en +61/+69 del 0x1012. De dónde sale el
+   país (¿lo elige el jugador en el launcher?) lo decide Benja.
+8. **Lo que el cliente pide y el server no atiende**: 0x4000 (la llave pide echar a un mudo → sacarlo + 0x3020/0x3400),
+   0x3150 (`/kick` de la llave), echar con 0x1FFF y aviso de mantenimiento 0x1FFA para los GM, avisos con color.
+9. **Parches al exe a pensar** (la red vieja): el vigilante de reloj 0x416C60 (cierra con «hack» si la PC se traba),
+   el tope de reenvío P2P, los 30 s del vigilante de votos.
+10. Ranking, gremios, amigos (Buddy, server aparte 0xA000..): no hay nada.
+11. **Repo en GitHub** (`r2beatlatino/…`, main + develop) y el cron del de prueba: lo decide Benja.
