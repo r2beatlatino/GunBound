@@ -40,12 +40,17 @@ vuelven el `title.img`, el fondo de carga `load_back.img` y el del selector `ser
 Legacy. Del lobby (`gamelist_back.img`, el logo «GunBound LEGACY» en el chat) y de la sala (`ready_back.img`,
 «OPCIONES DE SALA») se cambia SÓLO el fondo 800×600 por el del 557; los botones y marcos siguen siendo los del
 Legacy (`mezclar_img.py`; Benja, 16-nov).
-  ★ LOS MAPAS VUELVEN A STOCK (Benja, 16-nov: «si modificaron los mapas y sus fondos, regresalos a stock»). La
-  LISTA de mapas (`stage.dat`) es la del original: Legacy no agregó mapas. Pero en 7 mapas cambió el terreno
-  (`babob brick brickb facky fackyb hokb last lastb metro mos mosb`), la forma con la que pegan los tiros (`.lnd`) y
-  BORRÓ los adornos animados (vitrales de Brick, Metro, Mos, Facky: cuadros transparentes); y rehízo a juego las
-  miniaturas de la sala y 7 cargas `load_stage`. Todo eso sale del `graphics.xfs` del instalador GIS 557
-  (`STOCK`): cada archivo de mapa que difiere se reemplaza por el original (`archivos_de_mapa`).
+  ★ MAPAS: EL ARTE VUELVE AL ORIGINAL, LA JUGABILIDAD DE LEGACY SE QUEDA (Benja, 16-nov: «remover el arte, volver
+  al original — fondos; los cambios de gameplay o terreno, los conservamos»). La LISTA de mapas (`stage.dat`) es la
+  original: Legacy no agregó mapas. Un terreno `X.img` es [cuadro 0 = el TERRENO, atado a su `X.lnd` = la tierra
+  donde pegan los tiros][cuadro 1 = el FONDO, sólo en el lado A; el B usa el del A]. Entonces (`archivos_de_mapa`):
+    - `.lnd`: SIEMPRE los de Legacy (7 distintos: metro, babob, brickb, fackyb, hokb, lastb, mosb).
+    - terreno con la tierra cambiada: cuadro 0 de Legacy (el dibujo tiene que coincidir con la tierra) + el fondo
+      del original (si el original no tiene fondo propio, como babob/mosb, se le saca el que agregó Legacy).
+    - terreno con la tierra igual (brick, facky, last, mos: Legacy sólo cambió el fondo): entero del original.
+    - los adornos animados (brick1…, metro1…, mos1…, facky1…, que Legacy dejó transparentes): del original.
+    - miniaturas de la sala / del lobby y cargas `load_stage`: de Legacy sólo las etapas de terreno cambiado
+      (`ETAPAS_DE_LEGACY`, que muestran ESE terreno); las demás, del original.
 `avatar.xfs` (la ropa) sale SÓLO ORO (`avatar_xfs.solo_oro`): en las 861 piezas que se venden, cash en 0 y el permiso de cash apagado; las 3 que eran sólo cash, a 180 000 de oro. El server cobra con la misma tabla
 (`--precios` la escribe en servidor/datos/precios_avatar.json).
 
@@ -73,16 +78,50 @@ MAPAS = re.compile(r"^((babo|brick|candy|cave|dragon|facky|hok|kettle|last|metro
                    r"|load_stage\d+\.img|ready_stagemap\.img|gamelist_stagemap\.img)$")
 
 
+# Las etapas (0-10 lado A, 11-21 lado B: el índice de `ready_stagemap` y de `load_stageNN`) cuyo TERRENO cambió
+# Legacy. MEDIDO 16-nov: son exactamente las 7 `load_stage` que difieren y sus miniaturas muestran el terreno de
+# Legacy (3 = Metropolis A con la roca oscura, 21 = los alienígenas de fackyb, 17 = el dragón celeste de lastb…).
+# `archivos_de_mapa` comprueba que sean tantas como .lnd cambiados.
+ETAPAS_DE_LEGACY = {3, 12, 13, 16, 17, 18, 21}
+
+
+def _armar_img(cab, cuadros):
+    return cab[:4] + len(cuadros).to_bytes(4, "little") + b"".join(cuadros)
+
+
 def archivos_de_mapa(legacy_xfs, stock_xfs):
-    """{nombre: bytes del original} de cada archivo de mapa que el Legacy tiene DISTINTO del stock.
-    Se deriva comparando (no es una lista a mano): si el Legacy trae otro cambio de mapa, entra solo."""
+    """{nombre: bytes} de los archivos de mapa a poner en el cliente (ver el docstring del módulo: arte original,
+    jugabilidad de Legacy). Sólo devuelve lo que cambia respecto del Legacy."""
+    from mezclar_img import partir
     L, S = XFS(legacy_xfs), XFS(stock_xfs)
+    nombres = [n for n in L.entries if MAPAS.match(n) and n in S.entries]
+    lnd_cambiadas = {n[:-4] for n in nombres if n.endswith(".lnd") and L.read(n) != S.read(n)}
+    if len(lnd_cambiadas) != len(ETAPAS_DE_LEGACY):
+        raise SystemExit(f"⛔ {len(lnd_cambiadas)} tierras cambiadas ({sorted(lnd_cambiadas)}) y "
+                         f"{len(ETAPAS_DE_LEGACY)} etapas de Legacy: ¿es otro graphics.xfs?")
     salida = {}
-    for n in L.entries:
-        if MAPAS.match(n) and n in S.entries:
-            original = S.read(n)
-            if L.read(n) != original:
-                salida[n] = original
+    for n in nombres:
+        leg, orig = L.read(n), S.read(n)
+        if leg == orig or n.endswith(".lnd"):
+            continue                                            # igual, o la tierra: queda la de Legacy
+        base = n[:-4]
+        if base in lnd_cambiadas:                               # terreno de Legacy + fondo original
+            cab, cl = partir(leg)
+            _, co = partir(orig)
+            nuevo = _armar_img(cab, [cl[0]] + co[1:])
+        elif n == "ready_stagemap.img" or n == "gamelist_stagemap.img":
+            cab, cl = partir(leg)
+            _, co = partir(orig)
+            por_etapa = len(cl) // 22                           # la sala: 22 cuadros; el lobby: 44 (2 tandas de 22)
+            nuevo = _armar_img(cab, [cl[i] if i % 22 in ETAPAS_DE_LEGACY else co[i] for i in range(22 * por_etapa)])
+        elif re.fullmatch(r"load_stage\d+", base):
+            if int(base[10:]) in ETAPAS_DE_LEGACY:
+                continue
+            nuevo = orig
+        else:                                                   # fondo cambiado con la tierra igual, y los adornos
+            nuevo = orig
+        if nuevo != leg:
+            salida[n] = nuevo
     return salida
 
 ORIGEN = Path(r"C:\GunBound-Legacy")
@@ -161,7 +200,7 @@ def armar(origen=ORIGEN, destino=DESTINO):
             (Path(tmp) / n).write_bytes(datos)
         r = rearmar_xfs.rebuild(origen / "graphics.xfs", tmp, destino / "graphics.xfs")
     print(f"✔ graphics.xfs: arte original ({', '.join(p.name for p in ARTE.iterdir())}) y "
-          f"{len(mapas)} archivos de mapa a stock ({', '.join(sorted(mapas))})")
+          f"{len(mapas)} archivos de mapa con el arte original y la jugabilidad de Legacy ({', '.join(sorted(mapas))})")
     assert len(r["replacements"]) == len(list(ARTE.iterdir())) + len(mapas)
     oro, _ = avatar_xfs.solo_oro((origen / "avatar.xfs").read_bytes())
     (destino / "avatar.xfs").write_bytes(oro)
