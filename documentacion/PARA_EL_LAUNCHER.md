@@ -20,6 +20,23 @@
   server de laboratorio. Nunca en un build que se publica (igual que `R2_EDA_CLAVES_PRUEBA`, sólo en debug).
 - El cliente (`D:\Gunbound\Cliente-Enenos`) es de Softnyx: no va a ningún repo; se reparte por la CDN.
 
+## ★ En el ENSAYO (18-nov, andando y medido de punta a punta)
+
+| qué | dónde |
+|---|---|
+| canje y personajes (prod) | `https://ensayo.xn--eeos-gqab.link/gunbound/…` |
+| canje y personajes (prueba) | `https://ensayo.xn--eeos-gqab.link/gunbound-prueba/…` |
+| el juego (lo devuelve el canje) | prod `ensayo.xn--eeos-gqab.link:8372` · prueba `…:9372` (broker; el mundo 8370 / 9370, TCP+UDP) |
+| la lista FIRMADA del cliente | `https://ensayo.xn--eeos-gqab.link/gunbound/lista.jws` (sin caché) |
+| sus archivos | `https://ensayo.xn--eeos-gqab.link/files-gunbound/2026.11.18/<ruta>` |
+| la firma | cabecera `{"alg":"EdDSA","typ":"gunbound-manifiesto","kid":"140674dc24472102"}` (la clave ACTUAL de publicación de la plataforma, la misma que ya conoce el launcher) · carga con `"aud":"gunbound-launcher"` + `iat` |
+| el pase | `Portero::pase_para("gunbound")` / `("gunbound-prueba")`: Cuenta Eñeños los abre a toda cuenta activa |
+
+Medido el 18-nov: cuenta de prueba nueva → pase → personajes (0, máximo 2) → crear (pollito, AR) → canje →
+el juego de verdad entra al mundo del ensayo (log: `adentro`). Controles: pase reusado 409, nick repetido 409,
+ficha inventada 401, pase `gunbound` contra prueba 401. La firma verificada también con OpenSSL (y un byte
+cambiado no verifica). Herramientas: `lista_del_cliente.py` + `firmar_lista.py`.
+
 ## 1 · Dónde estamos
 
 | pieza | estado |

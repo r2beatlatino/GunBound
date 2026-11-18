@@ -8,7 +8,14 @@ amd64 o arm64, con dos copias del mismo código:
 | **prod** | `main` | 8372 · 8370 · 8371 | a mano, cuando Benja lo aprueba (`actualizar.sh prod`) |
 | **prueba** | `develop` | 9372 · 9370 · 9371 | solo, cada 5 min (cron `actualizar.sh prueba`), si el banco pasa |
 
-Es el mismo molde que EDA (`r2beatlatino/EDA`, `despliegue/`). ⛔ Nada de esto está en ningún VPS todavía.
+Es el mismo molde que EDA (`r2beatlatino/EDA`, `despliegue/`).
+
+★ **18-nov: corre en el VPS de ENSAYO** (103.90.160.237, `/opt/enenos`), como dos servicios del conjunto de Eñeños
+(`gunbound`, `gunbound-prueba`, perfil `gunbound`; los agregó la sesión «desarrollo del juego» al compose de
+allá) con la imagen `gunbound-server:ensayo1` (armada en el VPS desde `/opt/gunbound/fuente`, ce55122). Cuenta
+Eñeños `enenos-cuentas:ensayo15` (= la 14 + los `aud` de GunBound) y web `r2beat2013-web:ensayo13` (= la 12 + el
+bloque de GunBound del Caddyfile: `/root/gunbound/web13/`). El cliente y su lista firmada: `/opt/enenos/gunbound_web/`.
+⛔ Chile (prod) no tiene nada de esto.
 
 ## Levantar
 
