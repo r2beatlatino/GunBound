@@ -28,7 +28,7 @@
 | canje y personajes (prueba) | `https://ensayo.xn--eeos-gqab.link/gunbound-prueba/…` |
 | el juego (lo devuelve el canje) | prod `ensayo.xn--eeos-gqab.link:8372` · prueba `…:9372` (broker; el mundo 8370 / 9370, TCP+UDP) |
 | la lista FIRMADA del cliente | `https://ensayo.xn--eeos-gqab.link/gunbound/lista.jws` (sin caché) |
-| sus archivos | `https://ensayo.xn--eeos-gqab.link/files-gunbound/2026.11.18/<ruta>` |
+| sus archivos | ★ desde el 18-nov por la CDN: `https://cdn.xn--eeos-gqab.link/gunbound/<versión>/<ruta>` (§5.1). La lista vigente es la 2026.11.18.2 |
 | la firma | cabecera `{"alg":"EdDSA","typ":"gunbound-manifiesto","kid":"140674dc24472102"}` (la clave ACTUAL de publicación de la plataforma, la misma que ya conoce el launcher) · carga con `"aud":"gunbound-launcher"` + `iat` |
 | el pase | `Portero::pase_para("gunbound")` / `("gunbound-prueba")`: Cuenta Eñeños los abre a toda cuenta activa |
 
@@ -260,7 +260,30 @@ desde el repo del server).
   plataforma, que el launcher ya conoce. La de EDA hoy la firma `firmar_manifiesto.py` del repo de EDA.
 - Con eso, lo natural es generalizar `eda.rs` (verificar firma, `pendientes`, `bajar`) a «un juego con lista
   firmada», y que EDA y GunBound sean dos usos.
-- Los archivos del jugador (`del_usuario`) no se pisan al actualizar. `graphics.xfs` es el grande (665 MB).
+- Los archivos del jugador (`del_usuario`) no se pisan al actualizar. `graphics.xfs` es el grande (681 MB).
+
+### 5.1 · La CDN y las PARTES (18-nov)
+
+- **La base es la CDN**: `https://cdn.xn--eeos-gqab.link/gunbound/<versión>/` (Cloudflare delante del VPS, caché de
+  1 año; el VPS le contesta 403 a lo que no venga de Cloudflare). ⛔ La carpeta de una versión NO se reusa con otros
+  contenidos: versión nueva = carpeta nueva.
+- **Partes**: el plan gratis de Cloudflare no guarda archivos de más de 512 MB. `lista_del_cliente.py --partes
+  CARPETA` corta cada archivo de más de 500 MiB en pedazos de 256 MiB (el último, lo que sobre) y los declara EN
+  ORDEN dentro de la entrada del archivo:
+  ```
+  {"path": "graphics.xfs", "size": 681151882, "md5": "<del archivo ENTERO>",
+   "partes": [{"path": "graphics.xfs.p1", "size": 268435456, "md5": "…"},
+              {"path": "graphics.xfs.p2", "size": 268435456, "md5": "…"},
+              {"path": "graphics.xfs.p3", "size": 144280970, "md5": "…"}]}
+  ```
+  Los pedazos se suben a la misma carpeta de la versión (`<base><path de la parte>`). El launcher: valida cada parte
+  con las mismas reglas que un archivo (`RX_RUTA`, `size` entero, `RX_MD5`, y la suma de los `size` = el `size` del
+  archivo), baja cada una y comprueba su md5 (si una falla, se reintenta esa sola), las junta en orden y comprueba
+  el `md5` y el `size` del archivo ENTERO antes de dejarlo en su lugar. En la carpeta del jugador queda el archivo
+  entero, nunca las partes. Un launcher viejo no conoce `partes`: las ignora y baja el archivo entero (anda igual,
+  sólo que ese archivo sale del VPS y no de la caché).
+- Probado: `pruebas/probar_lista.py` (11, con controles: sin `--partes` no parte; un archivo chico va entero;
+  juntadas en otro orden el md5 NO da) y sobre el `graphics.xfs` real: 3 pedazos que juntos dan el md5 entero.
 
 ## 6 · Recursos para la pantalla de personajes
 
