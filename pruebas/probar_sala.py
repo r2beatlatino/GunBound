@@ -129,6 +129,9 @@ with ServerDePrueba() as srv:
     a.mandar(0x2120, con_largo("Otra") + AJUSTES_SOLO + bytes(4) + b"\x02")
     b.ver(a.esperar(0x2121, 0.4) is None, "control: adentro de una sala no se crea otra")
     # ABANDONAR la partida: el Legacy manda 0x2000 (volver al canal) y NO 0x3001 (medido 16-nov)
+    # ⚠ el 0x2001 del LOGIN sigue en la cola: sin vaciarla, el esperar de abajo lo toma a él y la sala se mira antes
+    #   de que el server atienda el 0x2000 (18-nov: rojo en el Docker de Linux, verde por suerte en Windows)
+    a.todos(0x2001, 0.2)
     a.mandar(0x2000, b"\xff\xff")
     b.ver(a.esperar(0x2001) is not None, "abandonar (0x2000) devuelve al canal")
     b.ver(srv.en_el_lazo(lambda: 0 not in srv.srv.mundo.salas), "la sala de práctica, vacía, se cerró")
