@@ -168,6 +168,31 @@ el HUD mezclado (medido 16-nov: el panel WEAPON vacío con el selector redondo e
 
 La tabla sale de `REGISTRO_BASE` en `jugar.py`: si cambia allá, manda allá.
 
+### 4.2b · Ventana o pantalla completa: en el `dxwnd.dxw`, NO en el registro (medido 18-nov)
+
+`ScreenMode` no cambia nada (el DxWnd mete el juego en ventana igual): dejarlo en `Windowed`. Lo que cambia es el
+`dxwnd.dxw` de la carpeta del cliente, ANTES de abrir (el juego lo lee al arrancar). Partiendo del que viene en la
+lista firmada:
+
+| | `coord0` | `flagg0` | `flagi0` | `sizx0` `sizy0` `initresw0` `initresh0` |
+|---|---|---|---|---|
+| **ventana** (lo de hoy) | `1` | `1275346944` | `4194308` | el tamaño elegido |
+| **pantalla completa** | `3` | `1275346960` (+`0x10` KEEPASPECTRATIO) | `4227076` (+`0x8000` HIDEDESKTOP) | dejarlos como estén (no se usan) |
+
+Pantalla completa = el juego 4:3 sin estirar a la altura del monitor y centrado (en 1920×1080: 1440×1080 en x=240),
+sin marco, con bandas negras a los costados (una ventana `dxwnd:hider` de DxWnd); el mouse bien escalado (clic
+medido). No hace falta saber la resolución del monitor: DxWnd la toma solo. Volver a ventana = volver a escribir la
+fila de arriba (medido). ⚠ Calcularlo con OR / AND sobre el valor que haya (`flagg0 | 0x10`, `flagi0 | 0x8000`; para
+volver, `& ~`), no clavarlo: si un día cambia el dxw de la lista, los demás bits se respetan.
+
+⚠ **En ventana, el tamaño tiene que entrar en el área de trabajo** (altura + ~36 de la barra de título): en un monitor
+1920×1080 (área 1920×1032), `1600x1200` sale 1600×1032 ESTIRADA y con la barra de título fuera de la pantalla (así
+está hoy); `1280x960` sale 4:3 y con su barra (medido). Ofrecer sólo los que entren (`SystemParametersInfo
+SPI_GETWORKAREA`), o elegir por defecto el más grande que entre.
+
+Descartado: sin `WINDOWIZE` es pantalla completa EXCLUSIVA (cambia el monitor a 800×600; el 4:3 lo decide la placa
+de video), y lo del GBSet (`ddraw2` + DdrawCompat) cambia las dll. Detalle y la tabla entera: CLIENTE.md «La ventana».
+
 ### 4.3 · El argumento
 
 `AES-128-ECB`, clave `FAEE85F24073D9161390197F6E562A67` (hex), sobre 48 bytes:

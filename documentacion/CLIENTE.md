@@ -45,6 +45,29 @@ como modo de interfaz y dibuja el HUD MEZCLADO (panel WEAPON clásico vacío con
 16-nov, lo vio Benja). Con el byte, el HUD sale como en el laboratorio de Codex. `ScreenDetail` = `1600x1200`
 (lo que trae el `dxwnd.dxw`).
 
+### Ventana o pantalla completa — MEDIDO 18-nov (monitor 1920×1080, área de trabajo 1920×1032)
+
+Todo sale del `dxwnd.dxw` (el juego lo lee al arrancar); el registro (`ScreenMode`) **no cambia nada** mientras
+DxWnd tenga `WINDOWIZE` (medido: `Full` y `Windowed` dan la misma ventana). Los nombres de los bits los dice
+`herramientas/leer_dxw.py`, sacados de la tabla del propio dxwnd.dll. Cómo se midió: el cliente abierto por la mesa,
+la geometría de sus ventanas (Win32) y un clic + doble clic en el mundo «Eñeños» calculado desde esa geometría
+(entra al lobby ⇒ el mouse está bien escalado).
+
+| `dxwnd.dxw` | qué da | mouse |
+|---|---|---|
+| tal cual (`coord0=1`, 1600×1200) | ventana CON marco centrada; como 1200 no entra en 1032, queda 1600×1032 **estirada** y la barra de título fuera de la pantalla (y=−26) | bien |
+| `sizx0/sizy0/initresw0/initresh0` = 1280/960/1280/960 | ventana 4:3 de verdad, 1280×960, con la barra de título visible | bien |
+| `coord0=2` | sin marco, el ÁREA DE TRABAJO entera (1920×1032), estirada | bien |
+| `coord0=3` | sin marco, el MONITOR entero (1920×1080), estirada | bien |
+| ★ `coord0=3` + `flagg0` \| `0x10` (KEEPASPECTRATIO) + `flagi0` \| `0x8000` (HIDEDESKTOP) | **pantalla completa**: el juego 1440×1080 centrado (x=240), 4:3 sin estirar, y DxWnd pone detrás una ventana `dxwnd:hider` negra (0,0,0) de 1920×1080 = las bandas | bien |
+| lo mismo SIN HIDEDESKTOP | el 1440×1080 centrado, pero a los costados se VE EL ESCRITORIO | bien |
+| sin `WINDOWIZE` (`flagg0` − `0x08000000`) | pantalla completa EXCLUSIVA: **cambia el modo del monitor a 800×600** (vuelve al cerrar). Si queda 4:3 o estirado lo decide la placa de video, no nosotros | bien |
+| KEEPASPECTRATIO en ventana (`coord0=1`) | no hace nada: sigue estirada al cliente | — |
+
+⇒ Pantalla completa = la fila ★ (cambia 3 valores; ni el exe ni las dll). Volver a ventana = volver a escribir
+los valores de siempre (medido: vuelve igual). La de GBSet (`ddraw2` + DdrawCompat) cambia las dll: descartada.
+Lo que el launcher tiene que escribir: PARA_EL_LAUNCHER.md §4.2b.
+
 ## Cómo lee el mouse y el teclado (importa para probar sin tocar la PC)
 
 - La POSICIÓN y los botones, por mensajes de la ventana (WM_MOUSEMOVE / WM_LBUTTONDOWN…), pero sólo si cree que su

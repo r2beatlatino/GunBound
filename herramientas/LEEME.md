@@ -2,7 +2,8 @@
 
 | herramienta | para qué |
 |---|---|
-| `parchar_cliente.py` | arma el cliente de Eñeños desde `C:\GunBound-Legacy` (5 parches medidos) · `--comprobar` |
+| `parchar_cliente.py` | arma el cliente de Eñeños desde `C:\GunBound-Legacy` (los parches medidos, CLIENTE.md) · `--comprobar` |
+| `leer_dxw.py` | qué opciones de DxWnd prende un `dxwnd.dxw`, con los nombres de la tabla del propio dxwnd.dll |
 | `laboratorio.py` | el server en esta PC con una clave de PRUEBA (`estado/clave_prueba.json`) |
 | `jugar.py` | el launcher de mesa: pase (de prueba o de verdad) → canje → registro → GunBound.exe · `--veces N` |
 | `mesa.py` + `mesa_agente.js` | varios clientes manejados por API sin tocar la PC (ver documentacion/PROBAR_CON_EL_JUEGO.md) |
