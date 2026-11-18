@@ -190,6 +190,38 @@ volver, `& ~`), no clavarlo: si un día cambia el dxw de la lista, los demás bi
 está hoy); `1280x960` sale 4:3 y con su barra (medido). Ofrecer sólo los que entren (`SystemParametersInfo
 SPI_GETWORKAREA`), o elegir por defecto el más grande que entre.
 
+#### Resolución CON pantalla completa — medido 18-nov (las dos vías que se pidieron)
+
+**(1) Cambiar la resolución del MONITOR mientras se juega: NO.** DxWnd no tiene un campo para eso (sus `initres`,
+`maxres`, `SUPPORTSVGA`… son las resoluciones que le FINGE al juego, no las del monitor): tendría que hacerlo el
+launcher con `ChangeDisplaySettingsEx`. Medido con 1280×960 y la receta ★: el juego llena el monitor justo (1280×960
+en 0,0, sin bandas), pero:
+- **el mouse quedó MAL escalado**: el clic no entró al lobby y el cursor se dibujó a escala del tamaño anterior;
+- **Windows NO devuelve el modo si el proceso que lo cambió muere** (lo cambié con `CDS_FULLSCREEN` desde un proceso
+  y lo maté: el monitor siguió en 1280×960). O sea: si el launcher se cierra o se cuelga, el jugador queda con el
+  monitor cambiado;
+- devolverlo costó: un cambio hecho por un proceso que se cierra enseguida a veces se pierde (volvía a 60 Hz en un
+  monitor de 165), y con dos monitores hay que nombrar el dispositivo (`\\.\DISPLAY1`). Encima, al bajar la
+  resolución Windows reacomoda las ventanas del escritorio.
+
+**(2) El monitor como está y la resolución elegida = el TAMAÑO del juego, centrado sobre negro: anda, con un
+pero.** Valores (sobre la receta ★ de pantalla completa):
+
+| | `coord0` | `posx0` `posy0` | `sizx0` `sizy0` `initresw0` `initresh0` | `flagn0` |
+|---|---|---|---|---|
+| tamaño W×H centrado | `0` | `(monitorW−W)/2`, `(monitorH−H)/2` | `W`, `H`, `W`, `H` | `& ~1` (sin FIXTHINFRAME = sin marco) |
+
+(+ `flagg0 | 0x10` y `flagi0 | 0x8000` como en ★). Medido 1024×768 en 1920×1080: ventana sin marco 1024×768 en
+(448,156), el mouse bien (clic → lobby), negro alrededor. **El pero:** como la ventana del juego no cubre el monitor,
+Windows NO la toma como pantalla completa (estado `ACCEPTS_NOTIFICATIONS`): **la barra de tareas queda visible
+abajo** y el negro de DxWnd tapa sólo el área de trabajo. Con la ★ (el juego a la altura del monitor) Windows sí la
+toma como pantalla completa (estado `BUSY`) y la barra de tareas se esconde (medido: abajo está el juego).
+(`coord0=1` también centra, pero en el área de trabajo, no en el monitor.)
+
+⇒ **Recomendación:** con «pantalla completa» marcada, ofrecer **«Pantalla entera (recomendado)»** = la ★, y si se
+quiere elegir tamaño, los 4:3 que entren en el MONITOR (`800×600, 1024×768, 1152×864, 1280×960, 1440×1080`, los de
+altura ≤ la del monitor), avisando que la barra de tareas se ve. No cambiar la resolución del monitor.
+
 Descartado: sin `WINDOWIZE` es pantalla completa EXCLUSIVA (cambia el monitor a 800×600; el 4:3 lo decide la placa
 de video), y lo del GBSet (`ddraw2` + DdrawCompat) cambia las dll. Detalle y la tabla entera: CLIENTE.md «La ventana».
 

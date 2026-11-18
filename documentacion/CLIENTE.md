@@ -63,6 +63,13 @@ la geometría de sus ventanas (Win32) y un clic + doble clic en el mundo «Eñe�
 | lo mismo SIN HIDEDESKTOP | el 1440×1080 centrado, pero a los costados se VE EL ESCRITORIO | bien |
 | sin `WINDOWIZE` (`flagg0` − `0x08000000`) | pantalla completa EXCLUSIVA: **cambia el modo del monitor a 800×600** (vuelve al cerrar). Si queda 4:3 o estirado lo decide la placa de video, no nosotros | bien |
 | KEEPASPECTRATIO en ventana (`coord0=1`) | no hace nada: sigue estirada al cliente | — |
+| ★ + `coord0=0`, `posx0/posy0` centrados en el MONITOR, tamaño 1024×768, `flagn0` − 1 (sin FIXTHINFRAME) | sin marco, 1024×768 centrado sobre negro; pero Windows NO lo toma como pantalla completa: la **barra de tareas se ve** y el negro cubre sólo el área de trabajo | bien |
+| ★ con el MONITOR cambiado a 1280×960 (`ChangeDisplaySettingsEx` desde otro proceso) | el juego llena 1280×960 justo | **MAL** (el clic no entra; el cursor a escala vieja) |
+| ★, el juego adelante | Windows lo toma como pantalla completa (`SHQueryUserNotificationState` = BUSY) y abajo está el juego, no la barra de tareas | — |
+
+⚠ Lo de cambiar el monitor: Windows **no** lo devolvió al morir el proceso que lo cambió (`CDS_FULLSCREEN`), y
+volverlo atrás costó varias vueltas (un cambio de un proceso que se cierra enseguida a veces se pierde; con dos
+monitores hay que nombrar `\\.\DISPLAY1`). No se recomienda: PARA_EL_LAUNCHER.md §4.2b.
 
 ⇒ Pantalla completa = la fila ★ (cambia 3 valores; ni el exe ni las dll). Volver a ventana = volver a escribir
 los valores de siempre (medido: vuelve igual). La de GBSet (`ddraw2` + DdrawCompat) cambia las dll: descartada.
