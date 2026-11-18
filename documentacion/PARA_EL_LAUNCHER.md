@@ -162,7 +162,8 @@ el HUD mezclado (medido 16-nov: el panel WEAPON vacío con el selector redondo e
 | `Location`, `Path` | SZ | la carpeta del cliente **con `\` al final** |
 | `ScreenMode` | SZ | `Windowed` (lo medido; el juego va en ventana por DxWnd) |
 | `ScreenDetail` | SZ | `1600x1200` (lo medido) |
-| `MusicVolume` 7 · `EffectVolume` 100 · `MouseSpeed` 50 · `Language` 1 · `AppID1` 701 · `AppID2` 702 · `AppID3` 703 · `LastServer` 0 · `AutoRefresh` 1 · `Version` 179 · `PlayBackStyle` 1 | DWORD | tal cual |
+| `MusicVolume` 7 · `EffectVolume` 100 · `MouseSpeed` 50 · `Language` 1 · `AppID1` 701 · `AppID2` 702 · `AppID3` 703 · `LastServer` 0 · `AutoRefresh` 1 · `Version` 179 | DWORD | tal cual |
+| `PlayBackStyle` | DWORD | el **medidor de tiro** que eligió el jugador: 0 Normal · 1 Milimétrico · 2 Métrico (lo lee el parche 9 del exe en esta MISMA clave, al empezar cada partida; `jugar.py` pone 1). ⚠ NO en `…\Enenos\Config` ni en HKLM: eso era de lua15.dll, que nuestro cliente no carga |
 | `Background` 01 · `ChannelName` 00 · `Effect3D` 03 · `EffectUse` 01 · `GameName` 00 · `InterfaceMode` 01 · `MusicUse` 00 · `MidiMode` 01 · `ShootingMode` 00 · `ShowMoon` 00 · `ShowOnlineUser` 00 · `ShowTurn` 01 · `LastID` 00 | **BINARY (1 byte)** | el byte en hex |
 
 La tabla sale de `REGISTRO_BASE` en `jugar.py`: si cambia allá, manda allá.

@@ -27,6 +27,14 @@ Los parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md):
      arte original»). El juego encadena logo (estado 5) → logo 2 (6) → título (1) → selector (2): en 0x4AB5EE
      el `push 6` pasa a `push 2` (del logo directo al selector, conservando la salida del estado 5) y en 0x4CF59E
      la rama que entra por el 6 (`push 1`) también va al 2. Lo encontró Codex (investigacion/ARTE_Y_ARRANQUE.md).
+  9. El MEDIDOR DE TIRO elegible (Normal / Milimétrico / Métrico, el «PlayBack Mode» del GBSet). El exe carga
+     SIEMPRE `play_back_blue.img` (0x515C07 `push 57AF98`, el único que lo nombra); en Legacy lo elegía DualSoft.dll
+     (y una copia en lua15.dll, que en nuestro cliente NO se carga nunca: MEDIDO 18-nov), leyendo PlayBackStyle de
+     HKLM y pisando ese texto. Sin DualSoft quedaba fijo. Ahora el `push` es un `call` a un cave en 0x55ED00 (el
+     relleno de ceros al final del código viejo, 0x55E5C6–0x55F000; nada apunta de 0x55EA00 en adelante) que lee
+     DWORD `PlayBackStyle` de HKCU\\Software\\softnyx\\Enenos (la misma clave del resto: la escribe el launcher)
+     y empuja 1 → `play_back_blu1.img`, 2 → `play_back_blu2.img`, otro o sin valor → `play_back_blue.img`.
+     Guarda todos los registros (pushad/popad) y vuelve a 0x515C0C. El fuente del cave está en `_CAVE_MEDIDOR`.
 
 Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el juego no arranca):
 
@@ -141,7 +149,56 @@ PARCHES = [
     ("P2P: ping cada 1 s", 0x4D8CF, bytes.fromhex("81c288130000"), bytes.fromhex("81c2e8030000")),
     ("arranque: del logo al selector", 0xAB5EE, bytes.fromhex("6a06"), bytes.fromhex("6a02")),
     ("arranque: rama alternativa al selector", 0xCF59E, bytes.fromhex("6a01"), bytes.fromhex("6a02")),
+    ("medidor de tiro: llamada al cave", 0x115C07, bytes.fromhex("6898af5700"), bytes.fromhex("e8f4900400")),
+    ("medidor de tiro: el cave", 0x15ED00, bytes(180), bytes.fromhex(
+        "6089e583ec10c745f800000000c745f4040000008d45fc5068190002006a006870e05c006801000080ff1508f0550085c075238d"
+        "45f4508d45f8506a006a006880ed5500ff75fcff150cf05500ff75fcff1504f055008b45f8b998af570083f8017505b98eed5500"
+        "83f8027505b9a1ed550089ec894c242061e98e6efbffcccc506c61794261636b5374796c6500706c61795f6261636b5f626c7531"
+        "2e696d6700706c61795f6261636b5f626c75322e696d6700")),
 ]
+# El cave del parche 9, en 0x55ED00 (armado con keystone; los textos van atrás, desde 0x55ED80):
+_CAVE_MEDIDOR = """
+    pushad                          ; se llega con call desde 0x515C07: [esp+20h] (tras pushad) = la vuelta
+    mov ebp, esp
+    sub esp, 10h                    ; [ebp-4] la clave · [ebp-8] el valor (0 si no hay) · [ebp-0Ch] su tamaño
+    mov dword ptr [ebp-8], 0
+    mov dword ptr [ebp-0Ch], 4
+    lea eax, [ebp-4]
+    push eax
+    push 20019h                     ; KEY_READ
+    push 0
+    push 5CE070h                    ; "Software\\softnyx\\Enenos" (el parche 3)
+    push 80000001h                  ; HKCU
+    call [55F008h]                  ; RegOpenKeyExA
+    test eax, eax
+    jne leer
+    lea eax, [ebp-0Ch]
+    push eax
+    lea eax, [ebp-8]
+    push eax
+    push 0
+    push 0
+    push 55ED80h                    ; "PlayBackStyle"
+    push dword ptr [ebp-4]
+    call [55F00Ch]                  ; RegQueryValueExA
+    push dword ptr [ebp-4]
+    call [55F004h]                  ; RegCloseKey
+leer:
+    mov eax, [ebp-8]
+    mov ecx, 57AF98h                ; "play_back_blue.img" (el de siempre)
+    cmp eax, 1
+    jne dos
+    mov ecx, 55ED8Eh                ; "play_back_blu1.img"
+dos:
+    cmp eax, 2
+    jne listo
+    mov ecx, 55EDA1h                ; "play_back_blu2.img"
+listo:
+    mov esp, ebp
+    mov [esp+20h], ecx              ; donde estaba la vuelta queda el texto: lo mismo que el push original
+    popad
+    jmp 515C0Ch
+"""
 CLAVE_REGISTRO = r"Software\softnyx\Enenos"
 SHA_DXWND = "909349ff70190fe962bdc55748c740b9e4137126b2ac4a4cebb7e63c3df55898"
 PARCHES_DXWND = [("DxWnd: varias instancias", 0x4142A, bytes.fromhex("7520"), bytes.fromhex("eb20"))]
