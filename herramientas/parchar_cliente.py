@@ -35,6 +35,14 @@ Los parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md):
      DWORD `PlayBackStyle` de HKCU\\Software\\softnyx\\Enenos (la misma clave del resto: la escribe el launcher)
      y empuja 1 → `play_back_blu1.img`, 2 → `play_back_blu2.img`, otro o sin valor → `play_back_blue.img`.
      Guarda todos los registros (pushad/popad) y vuelve a 0x515C0C. El fuente del cave está en `_CAVE_MEDIDOR`.
+  10. El aviso «Network Connection Error … (User will be disconnected in 30 seconds)» a los 20 s, no a los 10
+     (Benja, 19-nov: salía tras un tiro largo — Boomer — porque cada uno confirma el turno recién al terminar la
+     animación, y a 20 FPS pasa de 10 s; nombraba hasta a la llave misma). Es el VIGILANTE DE VOTOS de la llave
+     (0x4D8B88, investigacion/PARTIDA_VIENTO_Y_RED.md §3 n.º 7): un contador de tics y dos divisores — A (3 s,
+     0x4D8BA4 `lea ebx,[edi+edi*2]`) y B (10 s, 0x4D8BB9 `lea edi,[edi+edi*4]; shl edi,1`), con edi = 20 tics/s.
+     Sólo B → el aviso; A y B a la vez (el mínimo común: 30 s) → falta («strike»; a la 6.ª, echar); sólo A → nada.
+     Si se cambiara SÓLO B a 20 s, la falta pasaría a 60 s (mcm 3/20). Por eso A = 40 s y B = 20 s: aviso a los 20,
+     falta a los 40 (`imul ebx,edi,40` y `imul edi,edi,20` + 2 NOP, mismo largo).
 
 Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el juego no arranca):
 
@@ -155,6 +163,8 @@ PARCHES = [
         "45f4508d45f8506a006a006880ed5500ff75fcff150cf05500ff75fcff1504f055008b45f8b998af570083f8017505b98eed5500"
         "83f8027505b9a1ed550089ec894c242061e98e6efbffcccc506c61794261636b5374796c6500706c61795f6261636b5f626c7531"
         "2e696d6700706c61795f6261636b5f626c75322e696d6700")),
+    ("aviso de red: falta a los 40 s (divisor A)", 0xD8BA4, bytes.fromhex("8d1c7f"), bytes.fromhex("6bdf28")),
+    ("aviso de red: el aviso a los 20 s (divisor B)", 0xD8BB9, bytes.fromhex("8d3cbfd1e7"), bytes.fromhex("6bff149090")),
 ]
 # El cave del parche 9, en 0x55ED00 (armado con keystone; los textos van atrás, desde 0x55ED80):
 _CAVE_MEDIDOR = """
