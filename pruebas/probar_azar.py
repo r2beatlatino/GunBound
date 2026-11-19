@@ -56,4 +56,44 @@ for _ in range(10):
         viejo.movil1 = partida._movil_al_azar(mundo)
     fijos.append(viejo.movil1)
 b.ver(len(set(fijos)) == 1, "control: con el código viejo salían 10 iguales (la prueba de arriba lo habría cazado)")
+
+# ── la tabla del sorteo (19-nov, Benja eligió 5 %): como el Serv3 — los 16 normales parejos, 5 % especiales mitad y mitad
+import os
+from servidor import ajustes as aj
+from servidor.partida import ESPECIALES, MOVILES
+
+def sorteo(prob, n):
+    m = types.SimpleNamespace(prob_dragon=prob)
+    return [partida._movil_al_azar(m) for _ in range(n)]
+
+random.seed(5)
+sin = sorteo(0, 8000)
+b.igual(sorted(set(sin)), list(range(16)), "sin especiales salen los 16 normales, 14 y 15 incluidos (y nada más)")
+b.ver(min(sin.count(i) for i in range(16)) > 8000 / 16 * 0.8, "los 16 salen parejos (ninguno por debajo del 80 % de lo justo)")
+todo = sorteo(100, 2000)
+b.igual(sorted(set(todo)), sorted(ESPECIALES), "al 100 % sólo salen Dragón y Caballero")
+b.ver(abs(todo.count(17) - todo.count(18)) < 200, f"Dragón y Caballero mitad y mitad ({todo.count(17)} / {todo.count(18)})")
+cinco = sorteo(5, 40000)
+pct = 100 * sum(1 for v in cinco if v in ESPECIALES) / len(cinco)
+b.ver(4.5 <= pct <= 5.5, f"al 5 % salen especiales cerca del 5 % (dio {pct:.2f} %)")
+# control al revés: al 2 % (el valor viejo) la misma cuenta NO cae en la franja del 5 % — la prueba distingue
+dos = sorteo(2, 40000)
+pct2 = 100 * sum(1 for v in dos if v in ESPECIALES) / len(dos)
+b.ver(not (4.5 <= pct2 <= 5.5), f"control: al 2 % dio {pct2:.2f} %, fuera de la franja del 5 %")
+# control al revés: con la lista vieja (0..13) el 14 y el 15 no salían nunca — la primera comprobación lo habría cazado
+viejo = MOVILES[:]
+partida.MOVILES[:] = list(range(14))
+try:
+    b.ver({14, 15}.isdisjoint(sorteo(0, 4000)), "control: con la lista vieja el 14 y el 15 no salían nunca")
+finally:
+    partida.MOVILES[:] = viejo
+
+# el ajuste: 5 si no se dice nada; GB_ESPECIALES lo cambia; fuera de 0..100 se recorta
+os.environ.pop("GB_ESPECIALES", None)
+b.igual(aj.Ajustes().prob_especiales, 5, "sin GB_ESPECIALES el aleatorio usa 5 %")
+os.environ["GB_ESPECIALES"] = "2"
+b.igual(aj.Ajustes().prob_especiales, 2, "GB_ESPECIALES=2 lo baja a 2 %")
+os.environ["GB_ESPECIALES"] = "500"
+b.igual(aj.Ajustes().prob_especiales, 100, "un valor fuera de rango se recorta a 100")
+os.environ.pop("GB_ESPECIALES", None)
 b.fin()

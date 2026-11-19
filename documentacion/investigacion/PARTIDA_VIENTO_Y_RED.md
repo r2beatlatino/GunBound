@@ -196,3 +196,17 @@ Otros códigos de cierre (`0x4138B0`, `cl=1` cierra el juego, `cl=0` vuelve): `0
 - Qué espera el cliente después de mandar `0x4000`. Los textos 0x25F/0x260/0x261/0x282/0x141 (están en la tabla de textos `0x872F5C`).
 - Los nombres de la mitad de los códigos P2P (`0x4001`…`0x4006`, `0x8xxx`, `0xC309`…`0xC801`, `0xF0xx`).
 - `[0x7667C]` = 15 o −1 según `[0x240E9]` (`0x4D711D`): puede ser el tipo de sync del fin de turno ("15 sync") o la muerte súbita; sin resolver.
+
+## El móvil «aleatorio» (19-nov)
+
+Lo sortea el **server**, en cada partida (`partida._movil_al_azar`). Copiado del `GunBoundServ3.exe` de Perú (0x416227):
+
+| paso | Serv3 | nuestro |
+|---|---|---|
+| ¿especial? | `rand() % 10000 < Tank.Hidden.Ratio × 100` (el ratio sale del `setting.txt`, 0x40372B: **2 si falta, 5 en Perú**) | `GB_ESPECIALES`, **5** por omisión (lo eligió Benja) |
+| cuál especial | `(rand() & 1) + 0x11` → 17 Dragón / 18 Caballero, mitad y mitad | igual |
+| si no | `rand() & 0xF` → uno de los **16** normales (0..15), parejos | igual |
+
+Con 5 %: Dragón 2,5 % · Caballero 2,5 % · cada normal ≈ 5,9 %.
+Antes de esto el nuestro sorteaba sólo 0..13 (el 14 y el 15 no salían nunca) y los especiales al 2 %.
+Lo comprueba `pruebas/probar_azar.py`, con sus controles (la lista vieja y el 2 % dan rojo).

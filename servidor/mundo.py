@@ -47,7 +47,7 @@ class Mundo:
         self.mapas = {m["map_id"]: m for m in json.loads((ajustes_dir(ajustes) / "mapas.json").read_text("utf-8"))}
         self.precios = json.loads((ajustes_dir(ajustes) / "precios_avatar.json").read_text("utf-8"))["prices"]
         self.paises = {int(k): v for k, v in json.loads((ajustes_dir(ajustes) / "paises.json").read_text("utf-8"))["paises"].items()}
-        self.prob_dragon = 2                 # % de que el «al azar» salga Dragón o Caballero
+        self.prob_dragon = ajustes.prob_especiales   # % de que el «al azar» salga Dragón o Caballero
         self.atiende = {}
         for modulo in (entrada, canal, sala, partida, tienda, comandos):
             self.atiende.update(modulo.ATIENDE)

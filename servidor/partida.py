@@ -38,7 +38,7 @@ from .registro import log
 from .sala import ESPERA, JUGANDO
 from .sesion import AL_AZAR
 
-MOVILES = list(range(0, 14))           # Armor … Aduka
+MOVILES = list(range(0, 16))           # los 16 normales: el Serv3 sortea `rand() & 0xF` (0x416262) — 14 y 15 incluidos
 ESPECIALES = (17, 18)                  # Dragón y Caballero (en el Serv2 eran 14/15; en éste, 17/18)
 JEWEL = 0x0C
 SCORE = 0x04
@@ -67,7 +67,8 @@ def ajustes_de_partida(ajustes, cantidad):
 
 
 def _movil_al_azar(mundo):
-    if random.randint(1, 100) <= mundo.prob_dragon:
+    """Como el Serv3 (0x416227): rand % 10000 < ratio × 100 → especial (50/50), si no uno de los 16 normales."""
+    if random.randrange(10000) < mundo.prob_dragon * 100:
         return random.choice(ESPECIALES)
     return random.choice(MOVILES)
 
