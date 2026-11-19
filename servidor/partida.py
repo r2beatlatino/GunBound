@@ -84,14 +84,16 @@ def armar_inicio(mundo, x, cola_del_anfitrion=b"", solo=False):
     random.shuffle(orden_turno)
     r = bytearray(ajustes_de_partida(x.ajustes, len(x.jugadores)) + u8(x.mapa) + u16(len(x.jugadores)))
     for i, s in enumerate(x.jugadores):
-        if s.movil1 == AL_AZAR:
-            s.movil1 = _movil_al_azar(mundo)
-        if s.movil2 == AL_AZAR:
-            s.movil2 = _movil_al_azar(mundo)
+        # ★ 19-nov (Benja: «con aleatorio me tocó 2 veces seguidas el mismo; a un amigo, 3»): se sortea en CADA
+        #   partida y NO se pisa la elección. Antes `s.movil1 = sorteado` dejaba fijo el primer sorteo para todas las
+        #   partidas siguientes de esa sala (el cliente no vuelve a mandar 0x3200 si no cambia el móvil).
+        m1 = _movil_al_azar(mundo) if s.movil1 == AL_AZAR else s.movil1
+        m2 = _movil_al_azar(mundo) if s.movil2 == AL_AZAR else s.movil2
+        s.moviles_en_juego = (m1, m2)
         p = puntos[orden_lugar[s.casilla % len(puntos)]]
         px = random.randint(p["x_min"], p["x_max"])
         py = p["y"] or 0
-        r += u8(s.casilla) + fijo(s.nick, 12) + u8(s.equipo) + u8(s.movil1) + u8(s.movil2) + u16(px) + u16(py) + u16(orden_turno[i])
+        r += u8(s.casilla) + fijo(s.nick, 12) + u8(s.equipo) + u8(m1) + u8(m2) + u16(px) + u16(py) + u16(orden_turno[i])
     if not solo and len(cola_del_anfitrion) >= 22:
         r += b"\xFF\xFF" + cola_del_anfitrion[:22]       # la semilla y las joyas que sorteó el anfitrión
     else:
