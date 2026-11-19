@@ -125,15 +125,16 @@ Cada datagrama: `[WORD tipo(2 bits)|largo(14)][secuencia 1 byte][suma 1 byte][cu
 | | dirección | qué | evidencia |
 |---|---|---|---|
 | `0x4500` / `0x4501` | ida/vuelta | túnel | ya medido (PROTOCOLO_LEGACY.md) |
-| `0x4100` | → server | "me morí": DWORD + byte | `0x4E91E3` (MEDIDO); el emulador contesta `0x4101` |
+| `0x4100` | → server | "me morí": [causa DWORD][quién byte], sin cifrar | `0x4E91E3` (MEDIDO). ★ El server decide el fin (Serv3 DeadUser/CheckPlayEnd): `0x4102` a todos + `0x4410 [ganador]` si terminó — ver `FIN_DE_PARTIDA_Y_SCORE.md` |
+| `0x4104` | → server | "reaparecí" (Score/Jewel), cifrado `[casilla]` | `0x463EC5` (MEDIDO); el Serv3 contesta `0x4105` y manda `0x4106 [casilla]` a todos |
 | `0x4000` | → server | **`[casilla]`: la llave pide echar a uno que no responde** | `0x4D8C63` (MEDIDO) — **sin atender hoy** |
 | `0x4200` | → server | fin de Jewel; el server lo reparte como `0x4410` | ya en el server |
 | `0x4412` | → server | resultado, lo manda la llave (`0x414C80`); lo re-manda la llave nueva si cambia (`0x4D0671`) | MEDIDO |
 | `0x3232` | → server | "volví del resultado", **15 s después** de que llega el `0x4413` (`0x4D8932`) | MEDIDO |
 | `0x3020` | server → | alguien salió: muestra texto 0x25F; la llave rehace el turno (`0x4CFF2E`) | MEDIDO |
 | `0x3400` | server → | **nueva llave**: si soy yo, cierro los votos pendientes; si no, **re-mando mis votos** a la llave nueva (`0x4D063F`) | MEDIDO |
-| `0x4102` | server → | `[casilla][DWORD]`; si los bits `0xF000` y soy la llave → `0x8500` | MEDIDO parcial (`0x4D0C92`) |
-| `0x4410` / `0x4413` | server → | resultado / "terminó" (pone el fin y arranca los 15 s) | `0x4D0927` / `0x4D0F72` |
+| `0x4102` | server → | **la baja**: `[casilla][causa DWORD][quién]`, cifrado; Score: resta una vida; causa `0xF000` (se fue) y soy la llave → `0x8500` | MEDIDO (`0x4D0C92` + Serv3 `0x4180F0`) |
+| `0x4410` / `0x4413` | server → | **fin** `[ganador]` (equipo, o casilla sin el bit `0x80`; `FF` empate) — su lector suma el bono de victoria (`0x4106F4`) / "terminó" (arranca los 15 s) | `0x4D0927` / `0x4D0F72` |
 | `0x3FFF` | server → | la sala se cierra: manda `0x2000 FFFF` y sale | `0x4D089A` |
 
 ### 2.4 Qué decide la llave

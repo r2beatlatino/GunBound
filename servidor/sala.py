@@ -12,12 +12,15 @@ La entrada a una sala (0x2111), medida en el Legacy (rama 0x004CB8C5):
     cupo · cantidad · y una ficha por ocupante
 La ficha de cada ocupante: ver `ficha_ocupante` (medida con dos clientes).
 """
+import time
+
 from . import canal, rangos
 from .paquete import con_largo, fijo, texto_c, u8, u16
 from .registro import log
 from .sesion import AL_AZAR, SIN_LUGAR
 
 ESPERA, JUGANDO = 0, 1
+VEDA_DEL_NUMERO = 330              # s sin volver a usar el número de una sala cerrada (el cliente veda 300 s)
 PUERTO_P2P = 8363                  # el cliente escucha UDP acá para hablar con los otros de la sala
 
 
@@ -56,11 +59,21 @@ class Sala:
                 + u8(len(self.jugadores)) + u8(self.cupo) + u8(self.estado) + u8(1 if self.clave else 0))
 
 
-def _id_libre(mundo):
-    for i in range(255):
-        if i not in mundo.salas:
+def _id_libre(mundo, ahora=None):
+    """El número de una sala nueva. ⚠ NO se reusa enseguida el de una sala que se cerró (MEDIDO en el Legacy, 19-nov):
+    al ABANDONAR una partida (botón 400, 0x004FA2D1) o al ser echado (0x004EC9E8, 0x004D0D33), el cliente anota el
+    número de esa sala (0x00425DA0: servidor + sala + ahora + 300 s, hasta 64) y por 5 minutos NO MANDA el 0x2110
+    para entrar a una sala con ese número (0x004CF338 / 0x00500476 → 0x00425F90), sin avisar nada.
+    Con el «primer número libre» la sala nueva salía con el MISMO número que la abandonada y nadie podía entrar."""
+    ahora = time.monotonic() if ahora is None else ahora
+    cerradas = mundo.__dict__.setdefault("salas_cerradas", {})
+    libres = [i for i in range(255) if i not in mundo.salas]
+    if not libres:
+        return None
+    for i in libres:
+        if ahora - cerradas.get(i, -1e9) >= VEDA_DEL_NUMERO:
             return i
-    return None
+    return min(libres, key=lambda i: cerradas.get(i, -1e9))     # todas vedadas: la que se cerró hace más
 
 
 def _ip4(ip):
@@ -134,12 +147,18 @@ def detalle(mundo, s, cuerpo):
 def crear(mundo, s, cuerpo):
     """0x2120: [largo][título] + ajustes (4) + clave (4) + cupo (1)."""
     if s.sala is not None:
+        log("SALA", f"{s.nick} pide crear una sala pero el server lo tiene en la sala {s.sala.id}: se ignora")
+        return
+    if not cuerpo:
+        log("SALA", f"{s.nick} pide crear una sala sin datos")
         return
     n = cuerpo[0]
     titulo = cuerpo[1:1 + n].decode("latin-1")
     resto = cuerpo[1 + n:]
     sid = _id_libre(mundo)
     if sid is None or len(resto) < 9:
+        log("SALA", f"{s.nick} no puede crear la sala: {'no quedan números' if sid is None else 'pedido corto'}"
+                    f" · {bytes(cuerpo[:32]).hex()}")
         return
     x = Sala(sid, titulo, texto_c(resto[4:8]), resto[0:4], resto[8], s)
     mundo.salas[sid] = x
@@ -152,6 +171,9 @@ def crear(mundo, s, cuerpo):
 def entrar(mundo, s, cuerpo):
     """0x2110: [sala WORD][clave]."""
     if s.sala is not None or len(cuerpo) < 2:
+        log("SALA", f"{s.nick} pide entrar a una sala y se ignora: "
+                    f"{f'el server lo tiene en la sala {s.sala.id}' if s.sala is not None else 'pedido corto'}"
+                    f" · {bytes(cuerpo[:16]).hex()}")
         return
     sid = cuerpo[0] | (cuerpo[1] << 8)
     clave = texto_c(cuerpo[2:])
@@ -207,10 +229,16 @@ def sacar_de_sala(mundo, s, por_desconexion=False):
     if x is None:
         return
     casilla = s.casilla
+    if x.estado == JUGANDO and s in x.jugadores:
+        # Serv3 0x4145BF: el que se va vivo a mitad de partida cuenta como muerto (y eso puede cerrarla)
+        from . import partida  # partida importa sala: acá adentro, para no hacer un ciclo
+        if casilla not in getattr(x, "caidos", {casilla}):
+            partida.caer(mundo, x, casilla, partida.CAUSA_SE_FUE, 0xFF, salvo=s)
     x.jugadores.remove(s)
     s.sala, s.casilla = None, SIN_LUGAR
     if not x.jugadores:
         del mundo.salas[x.id]
+        mundo.__dict__.setdefault("salas_cerradas", {})[x.id] = time.monotonic()
         log("SALA", f"la sala {x.id} quedó vacía y se cierra")
         return
     if x.llave is s:

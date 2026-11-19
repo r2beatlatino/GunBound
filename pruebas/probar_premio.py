@@ -37,7 +37,7 @@ def resultado(filas):
 def partida_de_dos(srv, a_id, c_id, nombre):
     a, c = entrar(srv, a_id), entrar(srv, c_id)
     a.mandar(0x2120, con_largo(nombre) + AJUSTES + bytes(4) + b"\x02")
-    sala_id = a.esperar(0x2121)[2:4]
+    sala_id = a.esperar(0x2121)[3:5]          # 0x2121: 00 00 00 + id WORD (con id 0 daba igual [2:4])
     c.mandar(0x2110, bytes(sala_id))
     c.esperar(0x2111)
     a.mandar(0x3430, b"\x01\x02\x03\x04")
