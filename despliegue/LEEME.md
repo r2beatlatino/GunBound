@@ -32,6 +32,10 @@ La imagen corre el banco al armarse: si falla, no se arma y el contenedor anteri
 - El broker (8372/9372) y el mundo (8370/9370, TCP **y UDP**) van abiertos en el firewall.
 - El canje (8371/9371) escucha en 127.0.0.1: afuera va detrás de Caddy con HTTPS (el boleto es un secreto):
   `/gunbound/*` → 127.0.0.1:8371 y `/gunbound-prueba/*` → 127.0.0.1:9371 (el server acepta las rutas con prefijo).
+- ★ La puerta del panel del Coordinador (`/interno/panel/…`, `servidor/panel.py`) vive en ese mismo HTTP pero
+  **no sale por Caddy**: sólo responde sin prefijo (lo que pasa Caddy trae `/gunbound…` → 404), sin
+  `X-Forwarded-For` (Caddy lo pone siempre → 404) y con la ficha `R2_CUENTAS_FICHA_INTERNA` (sin ella, 404). El
+  Coordinador la llama por la red de adentro: `R2_PANEL_GESTION=gunbound=contrato1:http://gunbound:8371/interno/panel;gunbound-prueba=contrato1:http://gunbound-prueba:9371/interno/panel`.
 - Los jugadores se hablan por UDP directo (8363 en cada PC) y, si no anda en 2 s, por el túnel del server
   (`GB_P2P`, ejemplo.env). Para probar varios clientes en una misma PC: `GB_P2P=tunel`.
 - `GB_IP_PUBLICA` es la IP (o nombre) que el broker le anuncia al juego para el mundo. En un VPS detrás de NAT

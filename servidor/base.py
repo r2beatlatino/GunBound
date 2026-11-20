@@ -70,8 +70,10 @@ CREATE TABLE IF NOT EXISTS movimientos (
     enenos_id   INTEGER NOT NULL,
     cuando      INTEGER NOT NULL,
     que         TEXT NOT NULL,
-    detalle     TEXT NOT NULL DEFAULT ''
+    detalle     TEXT NOT NULL DEFAULT '',
+    quien       TEXT NOT NULL DEFAULT ''      -- quién lo pidió desde afuera («coordinador:<login>»); '' = el juego
 );
+CREATE INDEX IF NOT EXISTS movimientos_dueno ON movimientos(enenos_id, id);
 """
 
 
@@ -111,6 +113,8 @@ class Base:
             self.con.execute("ALTER TABLE jugadores ADD COLUMN cuenta INTEGER")
             self.con.execute("UPDATE jugadores SET cuenta = enenos_id WHERE cuenta IS NULL")
         self.con.execute("CREATE INDEX IF NOT EXISTS jugadores_cuenta ON jugadores(cuenta)")
+        if "quien" not in {f["name"] for f in self.con.execute("PRAGMA table_info(movimientos)")}:
+            self.con.execute("ALTER TABLE movimientos ADD COLUMN quien TEXT NOT NULL DEFAULT ''")
 
     def cerrar(self):
         self.con.close()
@@ -207,10 +211,11 @@ class Base:
     def poner_avatar(self, enenos_id, avatar):
         self.con.execute("UPDATE jugadores SET avatar=? WHERE enenos_id=?", (bytes(avatar), int(enenos_id)))
 
-    def sumar(self, enenos_id, oro=0, cash=0, gp=0, motivo=""):
+    def sumar(self, enenos_id, oro=0, cash=0, gp=0, motivo="", quien=""):
+        """Suma (o resta) y nunca deja nada negativo: lo que no alcanza queda en 0."""
         self.con.execute("UPDATE jugadores SET oro=MAX(0, oro+?), cash=MAX(0, cash+?), gp=MAX(0, gp+?) WHERE enenos_id=?",
                          (int(oro), int(cash), int(gp), int(enenos_id)))
-        self.anotar(enenos_id, "saldo", f"oro{oro:+d} cash{cash:+d} gp{gp:+d} {motivo}".strip())
+        self.anotar(enenos_id, "saldo", f"oro{oro:+d} cash{cash:+d} gp{gp:+d} {motivo}".strip(), quien=quien)
 
     def poner_gp(self, enenos_id, gp):
         gp = max(0, int(gp))
@@ -266,6 +271,43 @@ class Base:
             c.execute("ROLLBACK")
             raise
 
-    def anotar(self, enenos_id, que, detalle=""):
-        self.con.execute("INSERT INTO movimientos (enenos_id, cuando, que, detalle) VALUES (?,?,?,?)",
-                         (int(enenos_id), int(time.time()), que, detalle))
+    def anotar(self, enenos_id, que, detalle="", quien=""):
+        self.con.execute("INSERT INTO movimientos (enenos_id, cuando, que, detalle, quien) VALUES (?,?,?,?,?)",
+                         (int(enenos_id), int(time.time()), que, detalle, quien or ""))
+
+    def movimientos(self, enenos_id, n=20):
+        """Los últimos `n` del personaje, del más nuevo al más viejo: [{cuando, que, detalle, quien}]."""
+        return [dict(f) for f in self.con.execute(
+            "SELECT cuando, que, detalle, quien FROM movimientos WHERE enenos_id=? ORDER BY id DESC LIMIT ?",
+            (int(enenos_id), int(n)))]
+
+    # ── para el panel del Coordinador (servidor/panel.py) ─────────────────────────────────────────────────
+    def fechas(self, enenos_id):
+        """-> (creado, ultimo) en epoch, o None."""
+        f = self.con.execute("SELECT creado, ultimo FROM jugadores WHERE enenos_id=?", (int(enenos_id),)).fetchone()
+        return (f["creado"], f["ultimo"]) if f else None
+
+    def contar(self):
+        return self.con.execute("SELECT COUNT(*) FROM jugadores").fetchone()[0]
+
+    def buscar(self, q, tope=50):
+        """Por apodo (una parte, sin importar mayúsculas), por id del personaje o por Eñeños ID (la cuenta: trae
+        todos sus personajes). Los que calzan por número van primero. -> [Jugador] (como mucho `tope`)."""
+        q = (q or "").strip()[:64]
+        if not q:
+            return []
+        filas = []
+        if q.isascii() and q.isdigit() and len(q) <= 18:     # más largo no entra en un INTEGER de SQLite
+            n = int(q)
+            filas += self.con.execute("SELECT * FROM jugadores WHERE enenos_id=? OR cuenta=? ORDER BY enenos_id",
+                                      (n, n)).fetchall()
+        # «!» escapa los comodines de LIKE: un «_» en el apodo (muy común) es una letra, no «cualquiera»
+        patron = "%" + q.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%"
+        filas += self.con.execute("SELECT * FROM jugadores WHERE nick LIKE ? ESCAPE '!' ORDER BY ultimo DESC LIMIT ?",
+                                  (patron, int(tope))).fetchall()
+        vistos, salida = set(), []
+        for f in filas:
+            if f["enenos_id"] not in vistos:
+                vistos.add(f["enenos_id"])
+                salida.append(self._armar(f))
+        return salida[:tope]

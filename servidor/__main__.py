@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """El server entero en un proceso:  python -m servidor
 
-    broker (lista de mundos)  ·  mundo (TCP + UDP)  ·  web (canje del pase y salud)
+    broker (lista de mundos)  ·  mundo (TCP + UDP)  ·  web (canje del pase, salud y la puerta interna del panel)
 
 Todo se configura con variables de entorno (servidor/ajustes.py, despliegue/ejemplo.env).
 """
@@ -14,6 +14,7 @@ from .base import Base
 from .boletos import Boletos, Fichas
 from .broker import Broker
 from .mundo import Mundo
+from .panel import Panel
 from .pase import Verificador, bajar_clave_publica, parsear_clave_publica
 from .registro import log
 from .web import Web
@@ -33,8 +34,9 @@ class Server:
         self.verificador = Verificador(ajustes.pase_juego, clave)
         self.mundo = Mundo(ajustes, self.base, self.boletos)
         self.broker = Broker(ajustes, lambda: len(self.mundo.sesiones))
+        self.panel = Panel(ajustes, self.base, self.mundo)
         self.web = Web(ajustes, self.verificador, self.boletos, self.base, lambda: len(self.mundo.sesiones),
-                       lambda: self.broker.puerto, fichas=self.fichas)
+                       lambda: self.broker.puerto, fichas=self.fichas, panel=self.panel)
 
     async def arrancar(self):
         await self.mundo.arrancar()

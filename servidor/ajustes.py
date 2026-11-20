@@ -80,6 +80,9 @@ class Ajustes:
         # % de que el móvil «aleatorio» salga Dragón o Caballero (mitad y mitad). Serv3: `Tank.Hidden.Ratio` del
         # setting.txt (0x40372B; 2 si falta, 5 en el de Perú) — Benja eligió 5 el 19-nov
         self.prob_especiales = min(100, max(0, _ent("GB_ESPECIALES", 5)))
+        # la puerta del panel del Coordinador (`/interno/panel/…`, servidor/panel.py): la ficha que comparte la
+        # plataforma (el MISMO nombre que en R2Beat y Cuenta Eñeños). Vacía = la puerta no existe (404)
+        self.ficha_interna = _txt("R2_CUENTAS_FICHA_INTERNA")
         for k, v in cambios.items():
             if not hasattr(self, k):
                 raise AttributeError(f"ajuste desconocido: {k}")

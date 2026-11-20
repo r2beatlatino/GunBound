@@ -107,10 +107,17 @@ def movil(mundo, s, args):
     _decir(s, f"Movil principal: {args[0]}")
 
 
+def avisar(mundo, texto, a=None):
+    """El aviso de GM: a todos los del mundo, o sólo a la sesión `a`. -> a cuántos les llegó.
+    Lo usan /aviso y el panel del Coordinador (servidor/panel.py)."""
+    destinos = list(mundo.sesiones) if a is None else [a]
+    for x in destinos:
+        _decir(x, texto)
+    return len(destinos)
+
+
 def aviso(mundo, s, args):
-    t = " ".join(args)
-    for x in mundo.sesiones:
-        _decir(x, t)
+    avisar(mundo, " ".join(args))
 
 
 def quien(mundo, s, args):
