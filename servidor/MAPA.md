@@ -8,6 +8,7 @@ Todo corre en UN proceso y UN hilo (asyncio): `python -m servidor` levanta las t
 | `ajustes.py` | TODAS las variables `GB_*` (no hay IPs ni rutas escritas en otro lado) | — |
 | `broker.py` | la lista de mundos | 0x1013 → 0x1312 · 0x1100 → 0x1102 |
 | `web.py` | HTTP: personajes, canje del pase y salud | `POST /personajes` · `/personajes/crear` · `/personajes/pais` · `POST /canje` · `GET /salud` |
+| `panel.py` | la puerta INTERNA del panel del Coordinador (contrato v1): ver, aviso, echar, moneda (oro/cash). Ficha `R2_CUENTAS_FICHA_INTERNA`; sólo sin prefijo y sin proxy | `/interno/panel/…` (en el HTTP de `web.py`) |
 | `pase.py` | comprueba el pase de Cuenta Eñeños SOLO (firma Ed25519, aud, exp, jti) | — |
 | `boletos.py` | el boleto de 12 letras (contraseña) y las fichas temporales del launcher | — |
 | `firma_ed25519.py` | Ed25519 en Python puro (copia del de R2Beat) | — |
@@ -22,7 +23,7 @@ Todo corre en UN proceso y UN hilo (asyncio): `python -m servidor` levanta las t
 | `partida.py` | empezar, el túnel, fin del Jewel, resultado | 0x3430/3432 · 0x4500/4501 · 0x4200/4410 · 0x4100 · 0x4412/4413 |
 | `tienda.py` | inventario, compra, ponerse ropa, saldos | 0x1090/1091 · 0x6000/6001 · 0x6004 · 0x6008/6009 · 0x600E/600F · 0x6020/6021 · 0x6100/6101 · 0x6104/6105 |
 | `comandos.py` | los /comandos del chat (y los de GM) | 0x5100 → 0x5101 |
-| `base.py` | SQLite: jugadores, inventario, movimientos | — |
+| `base.py` | SQLite: jugadores, inventario, movimientos (con `quien`: lo que pidió el Coordinador) | — |
 | `registro.py` | el log (a la salida; Docker lo guarda) | — |
 
 Los formatos de cada mensaje, con la dirección del lector en el exe: `documentacion/PROTOCOLO_LEGACY.md`.

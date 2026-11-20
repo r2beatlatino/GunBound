@@ -80,5 +80,9 @@ POST /canje                        {"ficha": "...", "personaje": <id>}   (o {"pa
 | (falta) mantenimiento: **0x1FFA** `[segundos]` | el cliente muestra la cuenta regresiva |
 | (falta) avisos de color: 0x5101 con `!` `@` `#` `$` `%` `^` | aviso en rojo, verde… |
 
-Como en R2Beat (allá el panel sólo habla con `api_web.py`): el panel no toca la base, llama a una API del server
-(`GET/POST /gunbound/admin/...` en 127.0.0.1, detrás de Caddy con permisos).
+Como en R2Beat (allá el panel sólo habla con `api_web.py`): el panel no toca la base, llama a una API del server.
+★ 20-nov: es el **contrato del panel v1** del Coordinador (`documentacion/CONTRATO_PANEL.md` en su repo), en
+`servidor/panel.py`: `/interno/panel/…` en el mismo HTTP del canje, por la red de adentro, con la ficha
+`R2_CUENTAS_FICHA_INTERNA`. Hoy: ver (salud, conectados, buscar, ficha), aviso, echar y moneda (oro/cash) — lo mismo
+que `/quien`, `/aviso` y `/dar`. Falta: `/gp`, `/rangofijo`, `/pais` como acciones (el contrato v1 no las tiene) y el
+cartel nativo de echar (0x1FFF, hallado en el exe pero sin medir: hoy se avisa por el chat y se cierra la conexión).

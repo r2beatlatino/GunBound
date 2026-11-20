@@ -5,6 +5,7 @@
    (casilla, equipo, móviles). Mezclar las dos cosas es el bug que más se repite en estos servers.
 """
 import secrets
+import time
 
 from . import cifrado, paquete
 from .paquete import u16
@@ -20,6 +21,7 @@ class Sesion:
         self.escritor = escritor
         self.ip = direccion[0] if direccion else "0.0.0.0"
         self.puerto_origen = direccion[1] if direccion else 0
+        self.desde = int(time.time())           # cuándo se conectó (lo muestra el panel del Coordinador)
         self.enviado = 0                        # bytes mandados por esta conexión (la secuencia sale de acá)
         self.ficha = secrets.token_bytes(4)     # la que se manda en 0x1001: entra en la clave dinámica
         self.unico = secrets.token_bytes(4)

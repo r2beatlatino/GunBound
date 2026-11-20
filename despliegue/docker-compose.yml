@@ -35,6 +35,8 @@ services:
       GB_GM: ${GB_GM:-}
       GB_TRAZA: ${GB_TRAZA:-}
       GB_P2P: ${GB_P2P:-}
+      # la puerta del panel del Coordinador (/interno/panel, servidor/panel.py). Vacía = no existe
+      R2_CUENTAS_FICHA_INTERNA: ${R2_CUENTAS_FICHA_INTERNA:-}
     volumes:
       # los jugadores: AFUERA del contenedor y de la copia del repo, para que sobrevivan a cada actualización
       #   y se puedan llevar a otro VPS

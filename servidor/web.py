@@ -9,10 +9,14 @@ Escucha en 127.0.0.1: afuera va detrás de Caddy (HTTPS), porque la ficha y el b
     POST /personajes/pais   {"ficha", "personaje", "pais"}                     200 {"personajes"}
     POST /canje             {"pase"} | {"ficha", "personaje"}                  200 {"usuario", "ticket", "servidor", "nick", "nuevo"}
 (las rutas se aceptan también con el prefijo /gunbound o /gunbound-prueba, como las pase Caddy)
+
+    /interno/panel/…   la puerta del panel del Coordinador (servidor/panel.py). ⛔ SÓLO sin prefijo: lo que llega
+                       por Caddy trae /gunbound… y da 404. Pide la ficha interna (sin ella, 404 también)
 """
 import asyncio
 import json
 
+from . import panel as puerta_panel
 from . import rangos
 from .ajustes import DIR_DATOS_JUEGO
 from .base import PAISES
@@ -49,7 +53,7 @@ def _pais_sugerido(cabeceras):
 
 
 class Web:
-    def __init__(self, ajustes, verificador, boletos, base, contar_en_linea, puerto_broker, fichas=None):
+    def __init__(self, ajustes, verificador, boletos, base, contar_en_linea, puerto_broker, fichas=None, panel=None):
         self.aj = ajustes
         self.ver = verificador
         self.boletos = boletos
@@ -57,6 +61,7 @@ class Web:
         self.contar = contar_en_linea
         self.puerto_broker = puerto_broker
         self.fichas = fichas if fichas is not None else Fichas()
+        self.panel = panel                   # servidor/panel.py (None = sin puerta del Coordinador)
         self._servidor = None
 
     async def arrancar(self):
@@ -110,6 +115,9 @@ class Web:
 
     # ── las rutas ─────────────────────────────────────────────────────────────────────────────────────────
     def atender(self, metodo, ruta, cuerpo, cabeceras=None):
+        # ⛔ ANTES de sacar el prefijo: /gunbound/interno/panel/… (lo que pasa Caddy) NO es la puerta
+        if puerta_panel.es_suya(ruta.split("?")[0]):
+            return self.panel.atender(metodo, ruta, cuerpo, cabeceras or {}) if self.panel else (404, {"error": "no existe"})
         for prefijo in ("/gunbound-prueba", "/gunbound"):
             if ruta.startswith(prefijo + "/"):
                 ruta = ruta[len(prefijo):]
