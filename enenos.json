@@ -1,0 +1,24 @@
+{
+  "id": "gunbound",
+  "nombre": "GunBound",
+  "coordinador": "r2beatlatino/coordinador",
+  "imagen": "gunbound-server",
+  "pase": {
+    "live": "gunbound",
+    "test": "gunbound-prueba"
+  },
+  "puertos": {
+    "broker": 8372,
+    "mundo": 8370,
+    "http": 8371
+  },
+  "capacidades": {
+    "estado": "GET /salud",
+    "conectados": "GET /salud (cuántos)",
+    "aviso": "chat /aviso",
+    "buscar": null,
+    "sancionar": null,
+    "echar": null
+  },
+  "nota": "capacidades null = todavía no lo soporta; lo lee el Coordinador para armar su panel"
+}

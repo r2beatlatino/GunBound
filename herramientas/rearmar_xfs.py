@@ -1,5 +1,5 @@
 """rearmar_xfs — (de Codex, 16-nov) rearma el graphics.xfs con imágenes cambiadas, conservando todo lo demás.
-`parchar_cliente.py` lo usa con `herramientas/arte_original/` (el arte de GunBound WC GIS 557).
+`parchar_cliente.py` lo usa con `../arte_original/` (fuera del repo) (el arte de GunBound WC GIS 557).
 Informe: documentacion/investigacion/ARTE_Y_ARRANQUE.md.
 
 Rearma un FOX7 de Legacy, conservando los bloques no reemplazados.

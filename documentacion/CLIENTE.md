@@ -25,7 +25,7 @@ Eñeños, como el de R2Beat.
 | 9 | GunBound.exe 0x515C07 (`push 57AF98` → `call 55ED00`) + un cave de 180 bytes en 0x55ED00 | el **medidor de tiro** se elige: DWORD `PlayBackStyle` de HKCU\Software\softnyx\Enenos → 1 `play_back_blu1.img` (Milimétrico), 2 `play_back_blu2.img` (Métrico), otro o sin valor `play_back_blue.img` (Normal) | el exe tenía el Normal fijo; en Legacy lo cambiaba DualSoft.dll (y una copia en `lua15.dll`, que en nuestro cliente **no se carga nunca**: medido 18-nov). El cave está en el relleno de ceros del final del código viejo (nada apunta ahí) y guarda todos los registros. **Medido 18-nov** con Frida en el cargador de imágenes (0x52AB20, id 0x1C20) en una práctica: 2 → blu2, 1 → blu1, 0 → blue, sin valor → blue (`investigacion/medidor_de_tiro_medido.png`). Lo pidió la sesión del launcher para «Opciones del juego» |
 
 **Los datos que cambia** (además del exe): `graphics.xfs` con el arte ORIGINAL de GunBound WC (GIS 557,
-`herramientas/arte_original/`, rearmado con `herramientas/rearmar_xfs.py`): la única pantalla de arranque es el
+`../arte_original/` (al lado del repo: es de Softnyx, no va al repo), rearmado con `herramientas/rearmar_xfs.py`): la única pantalla de arranque es el
 título de World Champion, y vuelven el fondo de carga de partida y el del selector («WORLD LIST»). `avatar.xfs`:
 la tienda SÓLO ORO (`herramientas/avatar_xfs.py`). Medido con el juego (16-nov): una pantalla y al selector
 (`investigacion/arranque_una_pantalla_medido.png`), «LOADING» original al entrar a una partida, «Gold only» en la

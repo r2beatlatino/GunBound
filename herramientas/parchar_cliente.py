@@ -50,7 +50,7 @@ Y uno de dxwnd.dll (el DxWnd que trae Legacy para jugar en VENTANA: sin él el j
      (medido con Frida: el ExitProcess de la 2.ª instancia sale de dxwnd.dll+0x4203F). En +0x4202A el
      `jne` (75 20) pasa a `jmp` (EB 20): el segundo sigue de largo.
 
-Y los DATOS: `graphics.xfs` con el ARTE ORIGINAL (`herramientas/arte_original/`, del instalador GunBound WC GIS
+Y los DATOS: `graphics.xfs` con el ARTE ORIGINAL (`../arte_original/` FUERA del repo, del instalador GunBound WC GIS
 557): la única pantalla de arranque es el título de GunBound World Champion (en `logomode.img` y `logo.img`), y
 vuelven el `title.img`, el fondo de carga `load_back.img` y el del selector `serverlist_back.img` sin la marca
 Legacy. Del lobby (`gamelist_back.img`, el logo «GunBound LEGACY» en el chat) y de la sala (`ready_back.img`,
@@ -81,11 +81,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import avatar_xfs  # noqa: E402
 import rearmar_xfs  # noqa: E402
+import os  # noqa: E402
 import re  # noqa: E402
 import tempfile  # noqa: E402
 from xfs import XFS  # noqa: E402
 
-ARTE = Path(__file__).resolve().parent / "arte_original"
+# el arte ORIGINAL de GunBound (7 .img del instalador GIS 557) es de Softnyx: NO va al repo público. Vive al lado del
+# repo (D:\Gunbound\arte_original) o donde diga GB_ARTE_ORIGINAL.
+ARTE = Path(os.environ.get("GB_ARTE_ORIGINAL") or Path(__file__).resolve().parents[2] / "arte_original")
 # el graphics.xfs del instalador GunBound GIS WC 557 (lo sacó Codex de D:\Gunbound\GB; fuera del repo: es de Softnyx)
 STOCK = Path(r"D:\Gunbound\GB-originales\GIS557_graphics.xfs")
 SHA_STOCK = "5bb5e3075d7c33421dbed8376997637c8ee8008c53dbc9b752fe21c1c41554bb"
@@ -257,6 +260,8 @@ def armar(origen=ORIGEN, destino=DESTINO):
     if sha256(dx) != SHA_DXWND:
         raise SystemExit(f"⛔ {dx} no es el DxWnd que se midió")
     (destino / "dxwnd.dll").write_bytes(parchar(dx.read_bytes(), PARCHES_DXWND))
+    if not ARTE.is_dir() or not any(ARTE.iterdir()):
+        raise SystemExit(f"⛔ falta el arte original en {ARTE} (es de Softnyx, no viene en el repo; GB_ARTE_ORIGINAL)")
     if sha256(STOCK) != SHA_STOCK:
         raise SystemExit(f"⛔ {STOCK} no es el graphics.xfs del GIS 557 que se midió")
     mapas = archivos_de_mapa(origen / "graphics.xfs", STOCK)

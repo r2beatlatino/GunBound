@@ -1,5 +1,8 @@
 # GunBound — server para Eñeños
 
+> Parte de **Eñeños** · coordinado por [`r2beatlatino/coordinador`](https://github.com/r2beatlatino/coordinador) (las cuentas, el panel y el catálogo de juegos).
+> El arte y el cliente de GunBound son de Softnyx y **no** están en este repo.
+
 Server de GunBound (cliente Legacy v179) en Python, para correr en Linux con Docker, con la entrada por el pase de
 Cuenta Eñeños (como EDA y R2Beat). Dos servers por juego: prod (`main`) y prueba (`develop`).
 
