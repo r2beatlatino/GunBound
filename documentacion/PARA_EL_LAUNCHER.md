@@ -13,7 +13,7 @@
 
 ## 0 · Las reglas (las mismas de siempre)
 
-- ⛔ Nada a prod, nada publicado, ningún launcher subido sin que Benja lo pida.
+- ⛔ Nada a prod, nada publicado, ningún launcher subido sin que Eñeños lo pida.
 - ⛔ El server de GunBound vive en **otro repo** (`D:\Gunbound\gunbound-servidor`, git local). Desde el launcher
   **no se cambia**: si falta algo del lado del server, se anota y lo hace la sesión de GunBound.
 - ⛔ La clave de PRUEBA (`estado/clave_prueba.json` del repo de GunBound) firma pases que sólo valen contra el
@@ -61,8 +61,8 @@ En el orden en que lo ve el jugador. El modelo es EDA (`taller/launcher_tauri/sr
 1. **La carta de GunBound** en el mazo de juegos (hoy «próximamente»). La carpeta del instalador ya está prevista:
    `C:\game\N2launcher\Gunbound\` (`config.rs`, 16-nov).
 2. **INSTALAR / actualizar**: bajar el cliente con la lista firmada, como EDA (§5). Si no está, JUGAR dice
-   INSTALAR (pedido de Benja del 15-nov, anotado en la memoria del launcher).
-3. **La pantalla de personajes** (nueva; EDA no la tiene). Benja (16-nov): **2 personajes por cuenta**, cada uno con
+   INSTALAR (pedido de Eñeños del 15-nov, anotado en la memoria del launcher).
+3. **La pantalla de personajes** (nueva; EDA no la tiene). Eñeños (16-nov): **2 personajes por cuenta**, cada uno con
    nick, género (los dos iguales o distintos) y país; todos nacen **pollito**; el país se cambia después.
    - Lista: hasta `maximo` (= 2) tarjetas. Cada una: nick, ícono de rango (`rangos/<rango>.png`), `rango_nombre`,
      GP, país (nombre + bandera del launcher por `iso`).
@@ -256,7 +256,7 @@ desde el repo del server).
 
 - Todas las rutas pasan `RX_RUTA` de `eda.rs` (la herramienta corta si alguna no).
 - Falta decidir (lado launcher + plataforma): el `aud` y el `typ` de la firma para GunBound (¿`gunbound-launcher`?)
-  y quién la firma. Benja (15-nov): una sola autoridad para todos los juegos — la clave de publicación de la
+  y quién la firma. Eñeños (15-nov): una sola autoridad para todos los juegos — la clave de publicación de la
   plataforma, que el launcher ya conoce. La de EDA hoy la firma `firmar_manifiesto.py` del repo de EDA.
 - Con eso, lo natural es generalizar `eda.rs` (verificar firma, `pendientes`, `bajar`) a «un juego con lista
   firmada», y que EDA y GunBound sean dos usos.

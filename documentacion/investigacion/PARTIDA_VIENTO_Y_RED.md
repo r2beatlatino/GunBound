@@ -203,7 +203,7 @@ Lo sortea el **server**, en cada partida (`partida._movil_al_azar`). Copiado del
 
 | paso | Serv3 | nuestro |
 |---|---|---|
-| ¿especial? | `rand() % 10000 < Tank.Hidden.Ratio × 100` (el ratio sale del `setting.txt`, 0x40372B: **2 si falta, 5 en Perú**) | `GB_ESPECIALES`, **5** por omisión (lo eligió Benja) |
+| ¿especial? | `rand() % 10000 < Tank.Hidden.Ratio × 100` (el ratio sale del `setting.txt`, 0x40372B: **2 si falta, 5 en Perú**) | `GB_ESPECIALES`, **5** por omisión (lo eligió Eñeños) |
 | cuál especial | `(rand() & 1) + 0x11` → 17 Dragón / 18 Caballero, mitad y mitad | igual |
 | si no | `rand() & 0xF` → uno de los **16** normales (0..15), parejos | igual |
 

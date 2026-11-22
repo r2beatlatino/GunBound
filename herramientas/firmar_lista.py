@@ -2,14 +2,14 @@
 """firmar_lista — firma la lista del cliente (la de `lista_del_cliente.py`) con la clave de PUBLICACIÓN de la
 plataforma Eñeños, como la de EDA: un JWS compacto Ed25519 que el launcher verifica ANTES de bajar un byte.
 
-    python herramientas/firmar_lista.py lista_gunbound_2026.11.18.json  [--clave C:\\Users\\benja\\.enenos\\publicacion_actual.pem]
+    python herramientas/firmar_lista.py lista_gunbound_2026.11.18.json  [--clave %USERPROFILE%\\.enenos\\publicacion_actual.pem]
 
 Escribe `lista.jws` al lado de la lista. La cabecera y la carga (lo que el launcher tiene que comprobar):
     cabecera  {"alg": "EdDSA", "typ": "gunbound-manifiesto", "kid": sha256(pública)[:16]}
     carga     la lista + {"aud": "gunbound-launcher", "iat": <segundos>}
 (el mismo molde que EDA: `typ` "eda-manifiesto", `aud` "eda-launcher"; ver `eda.rs:verificar_manifiesto`)
 
-⛔ La clave privada vive SÓLO en esta PC (`C:\\Users\\benja\\.enenos\\`): no se imprime, no se copia, no va a ningún
+⛔ La clave privada vive SÓLO en esta PC (`%USERPROFILE%\\.enenos\\`): no se imprime, no se copia, no va a ningún
 VPS ni repo. Antes de firmar se comprueba que su pública sea la que el launcher ya conoce (`publicacion_publicas.json`),
 y después de firmar se VERIFICA la firma con la pública.
 """
@@ -25,7 +25,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 from servidor import firma_ed25519 as ed  # noqa: E402
 
-CLAVES = Path(r"C:\Users\benja\.enenos")
+CLAVES = Path.home() / ".enenos"
 TYP, AUD = "gunbound-manifiesto", "gunbound-launcher"
 PKCS8_ED25519 = bytes.fromhex("302e020100300506032b657004220420")   # el prefijo DER de una privada Ed25519
 

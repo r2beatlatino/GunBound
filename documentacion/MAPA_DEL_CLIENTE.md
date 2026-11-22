@@ -21,7 +21,7 @@
 - Contra el instalador GIS 557, Legacy cambió la **tierra de 7** (`metro babob brickb fackyb hokb lastb mosb`,
   ver `investigacion/mapas_colision_*.png`), **el fondo** de varios (Metropolis con dragones, entre otros),
   **borró los adornos animados** y rehízo miniaturas y cargas.
-- ✅ Benja (16-nov): «remover el arte, volver al original — fondos; los cambios de gameplay o terreno, los
+- ✅ Eñeños (16-nov): «remover el arte, volver al original — fondos; los cambios de gameplay o terreno, los
   conservamos». `parchar_cliente.archivos_de_mapa`:
   - las 7 tierras y sus 7 terrenos (cuadro 0): **de Legacy**; sus fondos: **del original** (a babob y mosb se les
     saca el fondo propio que les agregó Legacy, como en el original);

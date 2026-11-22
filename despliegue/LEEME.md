@@ -5,7 +5,7 @@ amd64 o arm64, con dos copias del mismo código:
 
 | entorno | rama | broker · mundo (TCP+UDP) · canje | se actualiza |
 |---|---|---|---|
-| **prod** | `main` | 8372 · 8370 · 8371 | a mano, cuando Benja lo aprueba (`actualizar.sh prod`) |
+| **prod** | `main` | 8372 · 8370 · 8371 | a mano, cuando Eñeños lo aprueba (`actualizar.sh prod`) |
 | **prueba** | `develop` | 9372 · 9370 · 9371 | solo, cada 5 min (cron `actualizar.sh prueba`), si el banco pasa |
 
 Es el mismo molde que EDA (`r2beatlatino/EDA`, `despliegue/`).

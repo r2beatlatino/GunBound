@@ -125,7 +125,7 @@ with ServerDePrueba() as srv:
     b.ver(ok and datos[5] == 1, "/practica en Jewel arranca con un jugador")
     a.mandar(0x3430, b"")
     b.ver(a.esperar(0x3432, 0.3) is None, "control: ya jugando, no arranca de nuevo")
-    # control: todavía en la sala, «Create» no se atiende (es lo que veía Benja sin el arreglo)
+    # control: todavía en la sala, «Create» no se atiende (es lo que veía Eñeños sin el arreglo)
     a.mandar(0x2120, con_largo("Otra") + AJUSTES_SOLO + bytes(4) + b"\x02")
     b.ver(a.esperar(0x2121, 0.4) is None, "control: adentro de una sala no se crea otra")
     # ABANDONAR la partida: el Legacy manda 0x2000 (volver al canal) y NO 0x3001 (medido 16-nov)

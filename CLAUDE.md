@@ -8,7 +8,7 @@
 ## 0 · Las reglas que no se negocian
 
 ```
-⛔ NADA SE SUBE A PROD SIN QUE BENJA LO PIDA.  prod = rama main; el de prueba = develop (se actualiza solo).
+⛔ NADA SE SUBE A PROD SIN QUE EÑEÑOS LO PIDA.  prod = rama main; el de prueba = develop (se actualiza solo).
 ⛔ EL REPO NO SE PUBLICA NI SE EMPUJA SIN SU ORDEN.  Hoy vive sólo en esta PC.
 ⛔ NINGUNA BASE DE JUGADORES VA AL REPO.  `estado/` y los *.db están gitignorados.
 ⛔ EL CLIENTE NO VA AL REPO.  Es de Softnyx/Legacy: se arma en la PC con herramientas/parchar_cliente.py.
@@ -41,7 +41,7 @@ servers por juego (prod y prueba) con el mismo código y otro `.env`.
 | `documentacion/MAPA_DEL_CLIENTE.md` | ★ viento, rangos (19 = pollito), bandera = país, GM, comandos «/», los plazos de la red vieja; el detalle en `investigacion/` |
 | `documentacion/PROBAR_CON_EL_JUEGO.md` | la mesa: varios clientes manejados por API, sin tocar el mouse |
 | `despliegue/LEEME.md` | Docker, prod y prueba, mudarse de máquina |
-| `documentacion/CREAR_PERSONAJE.md` | los 2 personajes por cuenta: decisiones de Benja y el contrato (hecho) |
+| `documentacion/CREAR_PERSONAJE.md` | los 2 personajes por cuenta: decisiones de Eñeños y el contrato (hecho) |
 | `documentacion/PENDIENTE.md` | lo que falta, en orden |
 
 ## 3 · El banco

@@ -30,7 +30,7 @@
 | al empezar `0x415F55` | en Score: `vidas = jugadores ÷ 2 + 1` → al nibble alto del byte [2] de los ajustes (1vs1 → 2 · 2vs2 → 3 · 4vs4 → 5) |
 | al irse uno de la sala `0x4145BF` | si estaba jugando y vivo: **DeadUser con causa `0xF000` y quién `0xFF`** (y por eso puede cerrar la partida) |
 
-O sea, las dos condiciones que contó Benja: **(a)** un equipo agotó sus vidas → pierde; **(b)** quedan vidas pero
+O sea, las dos condiciones que contó Eñeños: **(a)** un equipo agotó sus vidas → pierde; **(b)** quedan vidas pero
 todos los de un equipo están muertos a la vez → pierde. En 1vs1 la (b) salta **con la primera muerte**.
 
 ## 2 · Lo que hace el cliente (MEDIDO en el Legacy v179)
@@ -47,7 +47,7 @@ todos los de un equipo están muertos a la vez → pierde. En 1vs1 la (b) salta 
 
 ### La causa del `0x4100` (INFERIDO de los logs del ensayo)
 
-`01000000 01` = lo mató la casilla 1 · `03000000 01` = suicidio (Benja se mató a propósito; el cliente tiene una rama
+`01000000 01` = lo mató la casilla 1 · `03000000 01` = suicidio (Eñeños se mató a propósito; el cliente tiene una rama
 aparte `cmp [+0x414], 3` en `0x4E92C8`). `0xF000` = se fue (lo pone el server).
 
 ## 3 · Lo que pasó en el ensayo, leído con esto

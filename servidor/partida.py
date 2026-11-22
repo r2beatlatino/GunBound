@@ -85,7 +85,7 @@ def armar_inicio(mundo, x, cola_del_anfitrion=b"", solo=False):
     random.shuffle(orden_turno)
     r = bytearray(ajustes_de_partida(x.ajustes, len(x.jugadores)) + u8(x.mapa) + u16(len(x.jugadores)))
     for i, s in enumerate(x.jugadores):
-        # ★ 19-nov (Benja: «con aleatorio me tocó 2 veces seguidas el mismo; a un amigo, 3»): se sortea en CADA
+        # ★ 19-nov (Eñeños: «con aleatorio me tocó 2 veces seguidas el mismo; a un amigo, 3»): se sortea en CADA
         #   partida y NO se pisa la elección. Antes `s.movil1 = sorteado` dejaba fijo el primer sorteo para todas las
         #   partidas siguientes de esa sala (el cliente no vuelve a mandar 0x3200 si no cambia el móvil).
         m1 = _movil_al_azar(mundo) if s.movil1 == AL_AZAR else s.movil1

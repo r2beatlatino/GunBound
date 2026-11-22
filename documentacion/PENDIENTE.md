@@ -24,4 +24,4 @@
 10. Ranking, gremios, amigos (Buddy, server aparte 0xA000..): no hay nada.
 11. ✅ 19-nov: el arte original de Softnyx salió del repo (y de su historial) a `D:\Gunbound\arte_original`
     (`GB_ARTE_ORIGINAL`), para publicar el repo.
-12. **Repo en GitHub** (`r2beatlatino/…`, main + develop) y el cron del de prueba: lo decide Benja.
+12. **Repo en GitHub** (`r2beatlatino/…`, main + develop) y el cron del de prueba: lo decide Eñeños.

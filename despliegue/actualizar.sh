@@ -2,7 +2,7 @@
 # despliegue/actualizar.sh — pone un entorno en lo último de SU rama y lo reinicia, sólo si cambió algo.
 #
 #   bash /opt/gunbound/prueba/despliegue/actualizar.sh prueba     # develop → gunbound-prueba (cron, cada 5 min)
-#   bash /opt/gunbound/prod/despliegue/actualizar.sh prod         # main    → gunbound-prod   (a mano: lo aprueba Benja)
+#   bash /opt/gunbound/prod/despliegue/actualizar.sh prod         # main    → gunbound-prod   (a mano: lo aprueba Eñeños)
 #   … --forzar                                                     # rearma aunque no haya cambios
 #
 # ★ Si el banco falla, la imagen NO se arma (el Dockerfile corre pruebas/correr_todas.py) y el contenedor que andaba

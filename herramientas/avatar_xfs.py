@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """avatar_xfs — el avatar.xfs del cliente (la ropa y sus precios) y la tienda SÓLO ORO.
 
-Lo escribió Codex el 16-nov (encargo y su informe: documentacion/investigacion/TIENDA_AVATAR_XFS.md). Benja: «el
+Lo escribió Codex el 16-nov (encargo y su informe: documentacion/investigacion/TIENDA_AVATAR_XFS.md). Eñeños: «el
 cash queda como placeholder; todo se compra con oro». `parchar_cliente.py` llama a `solo_oro()` al armar el
 cliente; el server cobra con `servidor/datos/precios_avatar.json`, que sale de la misma conversión.
 

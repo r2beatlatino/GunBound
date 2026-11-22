@@ -44,7 +44,7 @@ python -B -m unittest -v test_oro_solo
 El primer comando genera y vuelve a leer los archivos. El segundo sólo verifica,
 sin escribir. Las rutas se resuelven respecto del script, aunque lo ejecutes desde
 otra carpeta. En esta máquina usé el Python 3.12.14 disponible en
-`C:\Users\benja\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`.
+`%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`.
 
 ### Contenedor XFS
 

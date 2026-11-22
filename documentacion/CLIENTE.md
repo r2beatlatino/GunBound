@@ -19,9 +19,9 @@ Eñeños, como el de R2Beat.
 | 3 | 0x1CE081 | `softnyx\Legacy` → `softnyx\Enenos` | no pisa ni lee la configuración del Legacy instalado |
 | 4 | 0x40C3EC (6 NOP) | «¿ya hay uno abierto?» → seguir | varias instancias (probar con varios jugadores en una PC) |
 | 5 | dxwnd.dll +0x4202A (`jne`→`jmp`) | DxWnd deja enganchar más de un juego | sin esto la 2.ª instancia la cierra DxWnd (`exit(0)`, medido con Frida) |
-| 6 | GunBound.exe 0x4D8FD (`add eax, 4E20` → `7D0`) | el P2P pasa al TÚNEL a los **2 s** sin noticias del compañero (era 20 s) | pedido de Benja: UDP directo primero, túnel rápido. El manejador (0x44D5E0) sólo prende «este va por túnel» y reenvía lo pendiente: no corta a nadie |
+| 6 | GunBound.exe 0x4D8FD (`add eax, 4E20` → `7D0`) | el P2P pasa al TÚNEL a los **2 s** sin noticias del compañero (era 20 s) | pedido de Eñeños: UDP directo primero, túnel rápido. El manejador (0x44D5E0) sólo prende «este va por túnel» y reenvía lo pendiente: no corta a nadie |
 | 7 | GunBound.exe 0x4D8CF (`add edx, 1388` → `3E8`) | ping al compañero cada **1 s** (era 5 s) | con plazo de 2 s y pings cada 5, un directo sano pero callado pasaría al túnel |
-| 8 | GunBound.exe 0xAB5EE (`push 6`→`push 2`) y 0xCF59E (`push 1`→`push 2`) | del logo DIRECTO al selector de servidor | Benja: «3 o 4 transiciones; lo ideal, una sola con arte original». Era logo → logo 2 → título → selector |
+| 8 | GunBound.exe 0xAB5EE (`push 6`→`push 2`) y 0xCF59E (`push 1`→`push 2`) | del logo DIRECTO al selector de servidor | Eñeños: «3 o 4 transiciones; lo ideal, una sola con arte original». Era logo → logo 2 → título → selector |
 | 9 | GunBound.exe 0x515C07 (`push 57AF98` → `call 55ED00`) + un cave de 180 bytes en 0x55ED00 | el **medidor de tiro** se elige: DWORD `PlayBackStyle` de HKCU\Software\softnyx\Enenos → 1 `play_back_blu1.img` (Milimétrico), 2 `play_back_blu2.img` (Métrico), otro o sin valor `play_back_blue.img` (Normal) | el exe tenía el Normal fijo; en Legacy lo cambiaba DualSoft.dll (y una copia en `lua15.dll`, que en nuestro cliente **no se carga nunca**: medido 18-nov). El cave está en el relleno de ceros del final del código viejo (nada apunta ahí) y guarda todos los registros. **Medido 18-nov** con Frida en el cargador de imágenes (0x52AB20, id 0x1C20) en una práctica: 2 → blu2, 1 → blu1, 0 → blue, sin valor → blue (`investigacion/medidor_de_tiro_medido.png`). Lo pidió la sesión del launcher para «Opciones del juego» |
 
 **Los datos que cambia** (además del exe): `graphics.xfs` con el arte ORIGINAL de GunBound WC (GIS 557,
@@ -42,7 +42,7 @@ el juego dibuja en 800×600 lógicos y la ventana mide 1600×1032; los clics lle
 ⚠ **El registro tiene TIPOS**: `InterfaceMode`, `Background`, `ShootingMode`, `Effect3D`, `ShowTurn`… son binarios de
 UN byte (PowerShell los muestra como `{1}`, pero NO son ese texto). Escritos como texto, el juego lee el `{` (0x7B)
 como modo de interfaz y dibuja el HUD MEZCLADO (panel WEAPON clásico vacío con el selector redondo encima; medido el
-16-nov, lo vio Benja). Con el byte, el HUD sale como en el laboratorio de Codex. `ScreenDetail` = `1600x1200`
+16-nov, lo vio Eñeños). Con el byte, el HUD sale como en el laboratorio de Codex. `ScreenDetail` = `1600x1200`
 (lo que trae el `dxwnd.dxw`).
 
 ### Ventana o pantalla completa — MEDIDO 18-nov (monitor 1920×1080, área de trabajo 1920×1032)

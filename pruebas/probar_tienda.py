@@ -10,7 +10,7 @@ from servidor.ajustes import DIR_DATOS_JUEGO
 
 b = Banco("probar_tienda")
 PRECIOS = json.loads((DIR_DATOS_JUEGO / "precios_avatar.json").read_text("utf-8"))["prices"]
-# una pieza de cuerpo (casilla 0). Benja (16-nov): TODO se compra con oro; el cash es un placeholder.
+# una pieza de cuerpo (casilla 0). Eñeños (16-nov): TODO se compra con oro; el cash es un placeholder.
 PIEZA = next(bytes.fromhex(k) for k, v in PRECIOS.items() if v[0] and k.endswith("0000"))
 ORO_PIEZA, CASH_PIEZA = PRECIOS[PIEZA.hex()]
 assert all(c == 0 for _, c in PRECIOS.values()), "la tabla del server tiene que ser SÓLO ORO"

@@ -78,7 +78,7 @@ class Ajustes:
         # 1 = anota cada mensaje que entra y sale (para medir con el cliente de verdad; en prod, apagado)
         self.traza = _txt("GB_TRAZA") == "1"
         # % de que el móvil «aleatorio» salga Dragón o Caballero (mitad y mitad). Serv3: `Tank.Hidden.Ratio` del
-        # setting.txt (0x40372B; 2 si falta, 5 en el de Perú) — Benja eligió 5 el 19-nov
+        # setting.txt (0x40372B; 2 si falta, 5 en el de Perú) — Eñeños eligió 5 el 19-nov
         self.prob_especiales = min(100, max(0, _ent("GB_ESPECIALES", 5)))
         # la puerta del panel del Coordinador (`/interno/panel/…`, servidor/panel.py): la ficha que comparte la
         # plataforma (el MISMO nombre que en R2Beat y Cuenta Eñeños). Vacía = la puerta no existe (404)

@@ -4,7 +4,7 @@ Trabajo terminado el 16/11/2026. **Se puede rearmar el XFS.** Dejé `graphics_nu
 
 No ejecuté el juego, sus DLL ni los instaladores. No escribí en `C:\GunBound-Legacy\`, `D:\Gunbound\` ni en `..\comun\`. Los resultados y scripts están dentro de esta carpeta:
 
-`C:\Users\benja\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\`
+`%USERPROFILE%\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\`
 
 ## MEDIDO — qué mirar primero
 
@@ -107,11 +107,11 @@ El 557 declara Inno Setup 5.1.7. El stream LZMA que empieza en **offset 1.005.81
 
 | Cliente | Copia exacta del contenedor extraído dentro de esta carpeta | Entradas | Marca |
 | --- | --- | ---: | --- |
-| Gunbound_GIS_WC_427 | `C:\Users\benja\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GIS_WC_427\stream_421454.xfs` | 2,907 | XFS2 |
-| Gunbound_GIS_WC_545 | `C:\Users\benja\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GIS_WC_545\stream_720520.xfs` | 3,913 | XFS2 |
-| Gunbound_GIS_WC_557 | `C:\Users\benja\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GIS_WC_557\stream_1005817.xfs` | 4,146 | XFS2 |
-| Gunbound_GLS_WC_458 | `C:\Users\benja\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GLS_WC_458\stream_354114.xfs` | 3,382 | XFS2 |
-| setup_LimaWC_1.5 | `C:\Users\benja\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\setup_LimaWC_1.5\solid_58880_3040837_graphics.xfs` | 16,915 | XFS2 |
+| Gunbound_GIS_WC_427 | `%USERPROFILE%\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GIS_WC_427\stream_421454.xfs` | 2,907 | XFS2 |
+| Gunbound_GIS_WC_545 | `%USERPROFILE%\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GIS_WC_545\stream_720520.xfs` | 3,913 | XFS2 |
+| Gunbound_GIS_WC_557 | `%USERPROFILE%\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GIS_WC_557\stream_1005817.xfs` | 4,146 | XFS2 |
+| Gunbound_GLS_WC_458 | `%USERPROFILE%\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\Gunbound_GLS_WC_458\stream_354114.xfs` | 3,382 | XFS2 |
+| setup_LimaWC_1.5 | `%USERPROFILE%\Desktop\Servidor R2Beat 2013\_trabajo\codex\gunbound\carga\clientes\setup_LimaWC_1.5\solid_58880_3040837_graphics.xfs` | 16,915 | XFS2 |
 
 `originales\GIS557\NOMBRE.img` es la referencia principal, extraída de `clientes\Gunbound_GIS_WC_557\stream_1005817.xfs`. Las carpetas `originales\Gunbound_GIS_WC_427\`, `originales\Gunbound_GIS_WC_545\`, `originales\Gunbound_GIS_WC_557\`, `originales\Gunbound_GLS_WC_458\` y `originales\setup_LimaWC_1.5\` conservan las otras variantes con sus nombres internos. La tabla del CSV identifica la fuente elegida para **cada** recurso. `load_back1.img` se compara con el nombre histórico `load_back.img`; `loading_ad.img`, con Lima.
 
@@ -173,7 +173,7 @@ python -B .\extraer_xfs.py .\graphics_nuevo.xfs logo.img title.img --destino .\c
 python -B .\verificar_xfs.py
 ```
 
-Python usado acá: `C:\Users\benja\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`, con `-B` para no escribir cachés en carpetas de origen. `--salida` permite otro nombre **dentro de esta carpeta**. El escritor rechaza nombres que no están en el índice, enlaces y destinos externos; nunca permite sobrescribir el original. Recibe IMG/EPA/etc. binarios, no convierte PNG a IMG. Un archivo de cero bytes no es una imagen transparente válida.
+Python usado acá: `%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`, con `-B` para no escribir cachés en carpetas de origen. `--salida` permite otro nombre **dentro de esta carpeta**. El escritor rechaza nombres que no están en el índice, enlaces y destinos externos; nunca permite sobrescribir el original. Recibe IMG/EPA/etc. binarios, no convierte PNG a IMG. Un archivo de cero bytes no es una imagen transparente válida.
 
 El XFS tiene un puntero de 32 bits al índice, cabecera descomprimida FOX7 de 64 bytes y 18.948 entradas de 128 bytes: nombre en 112 bytes y cuatro DWORD (offset, flag, tamaño original, tamaño almacenado). Los bloques admiten zlib y datos crudos, tamaños explícitos menores a 64 KiB y dos bytes auxiliares. El escritor conserva los datos antiguos hasta el índice, agrega los reemplazos y reconstruye cabecera/índice; las entradas intactas conservan offsets y bytes almacenados. No compacta los restos, así que el nuevo archivo puede crecer. El formato de escritura se validó para este FOX7, no para todos los XFS de cualquier versión.
 

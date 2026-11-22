@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """probar_personajes — dos personajes por cuenta, creados desde el launcher (pase → ficha → crear → canje).
-Decisiones de Benja (16-nov): 2 por cuenta, género libre, nacen pollito, el país se cambia después."""
+Decisiones de Eñeños (16-nov): 2 por cuenta, género libre, nacen pollito, el país se cambia después."""
 import json
 import struct
 import urllib.error

@@ -19,11 +19,11 @@ Los parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md):
   6. El P2P pasa al TÚNEL a los 2 s (no a los 20). En el bucle de compañeros de sala (0x44D89D, clase CCommP2P):
      si hace 20000 ms que no llega nada de uno (0x44D8FD `add eax, 4E20`), llama a 0x44D5E0, que prende «este va
      por túnel» (bit en +0xE5C, no se apaga) y le reenvía por el túnel lo pendiente. NO corta a nadie (medido).
-     Benja (16-nov): «UDP P2P, pero sólo 2000 ms de espera para pasar al túnel». 0x4E20 → 0x7D0.
+     Eñeños (16-nov): «UDP P2P, pero sólo 2000 ms de espera para pasar al túnel». 0x4E20 → 0x7D0.
   7. El PING al compañero cada 1 s (no cada 5): 0x44D8CF `add edx, 1388` → 0x3E8. Con un plazo de 2 s y pings
      cada 5, una conexión directa que anda pero está callada pasaría al túnel; con pings cada 1 s sólo pasa si
      de verdad se pierden.
-  8. UNA SOLA PANTALLA de arranque (Benja: «hace 3 o 4 transiciones antes del selector; lo ideal, una sola con
+  8. UNA SOLA PANTALLA de arranque (Eñeños: «hace 3 o 4 transiciones antes del selector; lo ideal, una sola con
      arte original»). El juego encadena logo (estado 5) → logo 2 (6) → título (1) → selector (2): en 0x4AB5EE
      el `push 6` pasa a `push 2` (del logo directo al selector, conservando la salida del estado 5) y en 0x4CF59E
      la rama que entra por el 6 (`push 1`) también va al 2. Lo encontró Codex (investigacion/ARTE_Y_ARRANQUE.md).
@@ -36,7 +36,7 @@ Los parches de GunBound.exe (todos medidos; ver documentacion/CLIENTE.md):
      y empuja 1 → `play_back_blu1.img`, 2 → `play_back_blu2.img`, otro o sin valor → `play_back_blue.img`.
      Guarda todos los registros (pushad/popad) y vuelve a 0x515C0C. El fuente del cave está en `_CAVE_MEDIDOR`.
   10. El aviso «Network Connection Error … (User will be disconnected in 30 seconds)» a los 20 s, no a los 10
-     (Benja, 19-nov: salía tras un tiro largo — Boomer — porque cada uno confirma el turno recién al terminar la
+     (Eñeños, 19-nov: salía tras un tiro largo — Boomer — porque cada uno confirma el turno recién al terminar la
      animación, y a 20 FPS pasa de 10 s; nombraba hasta a la llave misma). Es el VIGILANTE DE VOTOS de la llave
      (0x4D8B88, investigacion/PARTIDA_VIENTO_Y_RED.md §3 n.º 7): un contador de tics y dos divisores — A (3 s,
      0x4D8BA4 `lea ebx,[edi+edi*2]`) y B (10 s, 0x4D8BB9 `lea edi,[edi+edi*4]; shl edi,1`), con edi = 20 tics/s.
@@ -55,8 +55,8 @@ Y los DATOS: `graphics.xfs` con el ARTE ORIGINAL (`../arte_original/` FUERA del 
 vuelven el `title.img`, el fondo de carga `load_back.img` y el del selector `serverlist_back.img` sin la marca
 Legacy. Del lobby (`gamelist_back.img`, el logo «GunBound LEGACY» en el chat) y de la sala (`ready_back.img`,
 «OPCIONES DE SALA») se cambia SÓLO el fondo 800×600 por el del 557; los botones y marcos siguen siendo los del
-Legacy (`mezclar_img.py`; Benja, 16-nov).
-  ★ MAPAS: EL ARTE VUELVE AL ORIGINAL, LA JUGABILIDAD DE LEGACY SE QUEDA (Benja, 16-nov: «remover el arte, volver
+Legacy (`mezclar_img.py`; Eñeños, 16-nov).
+  ★ MAPAS: EL ARTE VUELVE AL ORIGINAL, LA JUGABILIDAD DE LEGACY SE QUEDA (Eñeños, 16-nov: «remover el arte, volver
   al original — fondos; los cambios de gameplay o terreno, los conservamos»). La LISTA de mapas (`stage.dat`) es la
   original: Legacy no agregó mapas. Un terreno `X.img` es [cuadro 0 = el TERRENO, atado a su `X.lnd` = la tierra
   donde pegan los tiros][cuadro 1 = el FONDO, sólo en el lado A; el B usa el del A]. Entonces (`archivos_de_mapa`):

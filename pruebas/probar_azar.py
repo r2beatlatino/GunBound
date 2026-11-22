@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""probar_azar — el móvil «aleatorio» se sortea en CADA partida (19-nov: a Benja le tocó 2 veces seguidas el mismo
+"""probar_azar — el móvil «aleatorio» se sortea en CADA partida (19-nov: a Eñeños le tocó 2 veces seguidas el mismo
 y a un amigo 3: el server pisaba la elección con el primer sorteo y lo repetía en todas las partidas de esa sala)."""
 import random
 import types
@@ -57,7 +57,7 @@ for _ in range(10):
     fijos.append(viejo.movil1)
 b.ver(len(set(fijos)) == 1, "control: con el código viejo salían 10 iguales (la prueba de arriba lo habría cazado)")
 
-# ── la tabla del sorteo (19-nov, Benja eligió 5 %): como el Serv3 — los 16 normales parejos, 5 % especiales mitad y mitad
+# ── la tabla del sorteo (19-nov, Eñeños eligió 5 %): como el Serv3 — los 16 normales parejos, 5 % especiales mitad y mitad
 import os
 from servidor import ajustes as aj
 from servidor.partida import ESPECIALES, MOVILES
