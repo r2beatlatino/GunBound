@@ -91,7 +91,9 @@ def armar_inicio(mundo, x, cola_del_anfitrion=b"", solo=False):
         m1 = _movil_al_azar(mundo) if s.movil1 == AL_AZAR else s.movil1
         m2 = _movil_al_azar(mundo) if s.movil2 == AL_AZAR else s.movil2
         s.moviles_en_juego = (m1, m2)
-        p = puntos[orden_lugar[s.casilla % len(puntos)]]
+        # Usar `i` (posición en la lista) en lugar de `s.casilla` evita que dos jugadores con casillas
+        # distanciadas en `len(puntos)` indexen la misma entrada de orden_lugar y reciban el mismo punto.
+        p = puntos[orden_lugar[i % len(puntos)]]
         px = random.randint(p["x_min"], p["x_max"])
         py = p["y"] or 0
         r += u8(s.casilla) + fijo(s.nick, 12) + u8(s.equipo) + u8(m1) + u8(m2) + u16(px) + u16(py) + u16(orden_turno[i])
@@ -128,11 +130,16 @@ def empezar(mundo, s, cuerpo, solo=False):
 
 
 def fin_jewel(mundo, s, cuerpo):
-    """0x4200: el anfitrión avisa el fin del Jewel; se reparte a todos como 0x4410."""
-    datos, _ = s.descifrar(cuerpo, 0x4200)
-    if s.sala:
-        for o in s.sala.jugadores:
-            o.enviar_cifrado(0x4410, datos)
+    """0x4200: el anfitrión avisa el fin del Jewel; se reparte a todos como 0x4410.
+    Solo la llave puede cerrarlo, en estado JUGANDO y una sola vez."""
+    datos, ok = s.descifrar(cuerpo, 0x4200)
+    x = s.sala
+    if not ok or x is None or x.llave is not s or x.estado != JUGANDO or x.ganador is not None:
+        return
+    # Usamos SIN_GANADOR como marcador si el payload está vacío; el valor real lo decidió el cliente.
+    x.ganador = datos[0] if datos else SIN_GANADOR
+    for o in x.jugadores:
+        o.enviar_cifrado(0x4410, datos)
 
 
 def murio(mundo, s, cuerpo):

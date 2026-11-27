@@ -69,8 +69,13 @@ def login(mundo, s, cuerpo):
     for viejo in mundo.sesiones_de_cuenta(j.cuenta):
         log("ENTRADA", f"{j.nick}: la cuenta {j.cuenta} ya estaba adentro con {viejo.nick} ({viejo.ip}); se corta")
         mundo.desconectar(viejo)
+    lugar = _lugar_libre(mundo)
+    if lugar is None:
+        log("ENTRADA", f"{s.ip}: canal lleno (255 jugadores), no entra {j.nick}")
+        s.enviar(0x1012, NO_EXISTE)
+        return
     s.jugador = j
-    s.lugar_canal = _lugar_libre(mundo)
+    s.lugar_canal = lugar
     mundo.sesiones.append(s)
     mundo.base.tocar(j.enenos_id)
     log("ENTRADA", f"{s} adentro · cliente v{s.version} · {len(mundo.sesiones)} en línea")
@@ -113,7 +118,7 @@ def _lugar_libre(mundo):
     for i in range(255):
         if i not in usados:
             return i
-    return 254
+    return None                              # no hay lugar libre; entrada.login debe rechazar
 
 
 ATIENDE = {0x1000: ficha, 0x0000: vivo, 0x1010: login, 0x1020: buscar}

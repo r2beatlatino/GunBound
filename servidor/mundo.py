@@ -43,6 +43,7 @@ class Mundo:
         self.base = base
         self.boletos = boletos
         self.sesiones = []                   # las conexiones con login hecho
+        self._total_conexiones = 0           # todas las conexiones activas (pre-login incluidas)
         self.salas = {}                      # id -> Sala
         self.mapas = {m["map_id"]: m for m in json.loads((ajustes_dir(ajustes) / "mapas.json").read_text("utf-8"))}
         self.precios = json.loads((ajustes_dir(ajustes) / "precios_avatar.json").read_text("utf-8"))["prices"]
@@ -77,9 +78,10 @@ class Mundo:
 
     # ── una conexión ──────────────────────────────────────────────────────────────────────────────────────
     async def _conexion(self, lector, escritor):
-        if len(self.sesiones) >= self.aj.max_conexiones:
+        if self._total_conexiones >= self.aj.max_conexiones:
             escritor.close()
             return
+        self._total_conexiones += 1
         sock = escritor.get_extra_info("socket")
         if sock is not None:
             try:
@@ -110,6 +112,7 @@ class Mundo:
         except (ConnectionError, ValueError) as e:
             log("MUNDO", f"{s}: conexión cortada ({e})")
         finally:
+            self._total_conexiones = max(0, self._total_conexiones - 1)
             self.desconectar(s)
 
     def atender(self, s, crudo):

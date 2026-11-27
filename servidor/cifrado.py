@@ -48,10 +48,13 @@ def _sha0_un_bloque(bloque):
 
 def clave_dinamica(usuario, contrasena, ficha):
     """usuario y contraseña ≤ 12 letras cada uno: entran en un solo bloque de 64 bytes."""
-    m = bytearray(usuario.encode("latin-1") + contrasena.encode("latin-1") + bytes(ficha))
+    m = bytearray(usuario.encode("latin-1")[:12] + contrasena.encode("latin-1")[:12] + bytes(ficha)[:4])
     bits = len(m) * 8
     m.append(0x80)
-    m.extend(bytes(62 - len(m)))
+    relleno = 62 - len(m)
+    if relleno < 0:
+        raise ValueError(f"clave_dinamica: combinación usuario+contraseña+ficha demasiado larga ({len(m)} > 61 bytes)")
+    m.extend(bytes(relleno))
     m.extend(bits.to_bytes(2, "big"))
     return _sha0_un_bloque(bytes(m))
 
