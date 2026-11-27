@@ -88,6 +88,8 @@ class Verificador:
             firma = _de_b64u(partes[2])
         except (ValueError, TypeError):
             return None, "pase mal formado"
+        if not isinstance(cab, dict) or not isinstance(carga, dict):
+            return None, "pase mal formado"
         if cab.get("alg") != "EdDSA":
             return None, "algoritmo no aceptado"
         if not ed.verificar(self.clave, (partes[0] + "." + partes[1]).encode("ascii"), firma):

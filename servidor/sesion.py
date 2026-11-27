@@ -13,6 +13,7 @@ from .registro import log
 
 SIN_LUGAR = -1
 AL_AZAR = 0xFF          # móvil «al azar»
+TOPE_SALIDA = 2_000_000  # bytes pendientes de mandar a una conexión que no lee
 
 
 class Sesion:
@@ -91,6 +92,13 @@ class Sesion:
         except Exception as e:                                          # noqa: BLE001
             log("MUNDO", f"{self}: no pude mandar 0x{comando:04X}: {e}")
             self.cerrada = True
+            return
+        transporte = getattr(self.escritor, "transport", None)
+        if transporte is not None and transporte.get_write_buffer_size() > TOPE_SALIDA:
+            # sólo drena la conexión que está leyendo: uno que no lee nunca haría crecer la memoria sin fin
+            log("MUNDO", f"{self}: más de {TOPE_SALIDA // 1_000_000} MB sin leer, se corta")
+            self.cerrada = True
+            transporte.abort()                  # close() esperaría a vaciar un buffer que nadie lee
 
     def enviar_cifrado(self, comando, datos, rtc=None):
         self.enviar(comando, self.cifrar(datos, comando), rtc=rtc)

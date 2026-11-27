@@ -219,4 +219,95 @@ result_hueco = _lugar_libre(ns_hueco)
 b.ver(result_lleno is None, "B-08: _lugar_libre devuelve None con 255 lugares ocupados")
 b.igual(result_hueco, 254, "B-08: control — con 254 ocupados devuelve el 254 libre")
 
+# ── B-12: crear sala recorta el cupo a 1..8 (como cambiar_cupo) · B-13: saldos con tope u32 ────────────
+with ServerDePrueba(p2p="tunel") as srv:
+    a = entrar(srv, 90001071)
+    a.mandar(0x2120, con_largo("Cupo20") + SOLO + bytes(4) + b"\x14")
+    sid = a.esperar(0x2121)[3:5]
+    sid = sid[0] | sid[1] << 8
+    b.igual(srv.en_el_lazo(lambda: srv.srv.mundo.salas[sid].cupo), 8, "B-12: cupo 20 al crear queda en 8")
+    a.cerrar()
+    c = entrar(srv, 90001072)
+    c.mandar(0x2120, con_largo("Cupo4") + SOLO + bytes(4) + b"\x04")
+    sid = c.esperar(0x2121)[3:5]
+    sid = sid[0] | sid[1] << 8
+    b.igual(srv.en_el_lazo(lambda: srv.srv.mundo.salas[sid].cupo), 4, "B-12: control: cupo 4 se respeta")
+    c.cerrar()
+
+    def oro_tras_sumar():
+        base = srv.srv.mundo.base
+        for _ in range(5):
+            base.sumar(90001071, oro=1_000_000_000)
+        return base.con.execute("SELECT oro FROM jugadores WHERE enenos_id=?", (90001071,)).fetchone()[0]
+    b.igual(srv.en_el_lazo(oro_tras_sumar), 4294967295, "B-13: el oro no pasa de 0xFFFFFFFF (el cliente lo lee u32)")
+
+    def oro_tras_restar():
+        base = srv.srv.mundo.base
+        base.sumar(90001071, oro=-5_000_000_000)
+        return base.con.execute("SELECT oro FROM jugadores WHERE enenos_id=?", (90001071,)).fetchone()[0]
+    b.igual(srv.en_el_lazo(oro_tras_restar), 0, "B-13: control: restar de más sigue quedando en 0")
+
+# ── B-15: el corte por keepalive (TimeoutError del socket) en plena partida no congela el server ──────
+# Desde Python 3.11 asyncio.TimeoutError es TimeoutError; el Docker usa 3.13. Con 3.10 la prueba pasa igual.
+import time
+with ServerDePrueba(p2p="tunel") as srv:
+    a, c = entrar(srv, 90001081), entrar(srv, 90001082)
+    a.mandar(0x2120, con_largo("Corte") + SOLO + bytes(4) + b"\x02")
+    sid = a.esperar(0x2121)[3:5]
+    c.mandar(0x2110, bytes(sid))
+    c.esperar(0x2111)
+    a.mandar(0x3430, b"")
+    a.esperar(0x3432), c.esperar(0x3432)
+
+    def cortar_por_keepalive():
+        o = next(x for x in srv.srv.mundo.sesiones if x.enenos_id == 90001082)
+        o.escritor.transport.get_protocol().connection_lost(TimeoutError(110, "Connection timed out"))
+    try:
+        srv.en_el_lazo(cortar_por_keepalive)
+        time.sleep(0.5)
+        quedan = srv.en_el_lazo(lambda: sorted(x.enenos_id for x in srv.srv.mundo.sesiones))
+    except Exception:                                      # noqa: BLE001
+        quedan = "el lazo no respondió en 5 s"
+    b.ver(isinstance(quedan, list), "B-15: el lazo sigue respondiendo tras el corte por keepalive")
+    b.igual(quedan, [90001081], "B-15: la sesión cortada se saca de la lista")
+    b.ver(a.esperar(0x4410, 1.0) is not None, "B-15: el que se cortó cuenta como caído → fin de la partida")
+    a.cerrar(); c.cerrar()
+
+# ── B-16: uno que no lee no hace crecer la memoria sin fin · B-17: login con «²» recibe respuesta ─────
+from servidor import sesion as _sesion
+with ServerDePrueba(p2p="tunel") as srv:
+    tope_original = _sesion.TOPE_SALIDA
+    _sesion.TOPE_SALIDA = 200_000                         # más chico para que la prueba sea rápida
+    try:
+        mudo = entrar(srv, 90001091)                      # entra al canal y nunca más lee
+        a = entrar(srv, 90001092)
+        texto = b"x" * 250
+        sigue = lambda: srv.en_el_lazo(lambda: any(x.enenos_id == 90001091 for x in srv.srv.mundo.sesiones))
+        for tanda in range(40):
+            for _ in range(250):
+                a.mandar_cifrado(0x2010, bytes([len(texto)]) + texto)
+            a.todos(0x201F, 0.05)
+            if not sigue():
+                break
+        b.ver(not sigue(), "B-16: al que no lee y pasa el tope de salida se lo corta y se lo saca")
+        b.ver(srv.en_el_lazo(lambda: any(x.enenos_id == 90001092 for x in srv.srv.mundo.sesiones)),
+              "B-16: control: el que sí lee sigue conectado")
+        mudo.cerrar(); a.cerrar()
+    finally:
+        _sesion.TOPE_SALIDA = tope_original
+
+    r = Robot(*srv.mundo)
+    r.mandar(0x1000)
+    r.esperar(0x1001)
+    r.mandar(0x1010, cifrado.cifrar_estatico(b"\xb2".ljust(16, b"\0")) + bytes(16) + bytes(48))
+    b.ver(r.esperar(0x1012, 1.0) is not None, "B-17: usuario «²» (isdigit pero no int) → 0x1012, no silencio")
+    r.cerrar()
+
+# ── B-14: un pase cuya cabecera JSON no es un objeto se rechaza (antes: AttributeError → 500) ─────────
+from servidor.pase import Verificador
+v = Verificador("gunbound", b"\x00" * 32)
+b.igual(v.comprobar("W10.e30.AAAA"), (None, "pase mal formado"), "B-14: cabecera «[]» → pase mal formado")
+b.igual(v.comprobar("e30.W10.AAAA"), (None, "pase mal formado"), "B-14: carga «[]» → pase mal formado")
+b.igual(v.comprobar("e30.e30.AAAA"), (None, "algoritmo no aceptado"), "B-14: control: cabecera «{}» sigue al chequeo de alg")
+
 b.fin()

@@ -161,7 +161,7 @@ def crear(mundo, s, cuerpo):
         log("SALA", f"{s.nick} no puede crear la sala: {motivo} · {bytes(cuerpo[:32]).hex()}")
         s.enviar(0x5101, motivo.encode("latin-1"))
         return
-    x = Sala(sid, titulo, texto_c(resto[4:8]), resto[0:4], resto[8], s)
+    x = Sala(sid, titulo, texto_c(resto[4:8]), resto[0:4], max(1, min(resto[8], 8)), s)
     mundo.salas[sid] = x
     canal.avisar_salida(mundo, s)
     _poner(s, x, casilla=0, equipo=0)

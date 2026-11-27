@@ -47,7 +47,7 @@ def login(mundo, s, cuerpo):
         s.enviar(0x1012, NO_EXISTE)
         return
     usuario = texto_c(cifrado.descifrar_estatico(cuerpo[0:16]))
-    boleto = mundo.boletos.vigente(int(usuario)) if usuario.isdigit() else None
+    boleto = mundo.boletos.vigente(int(usuario)) if usuario.isascii() and usuario.isdigit() else None
     if boleto is None:
         log("ENTRADA", f"{s.ip}: «{usuario}» sin boleto vigente (¿tocó JUGAR hace más de {mundo.aj.boleto_horas} h?)")
         s.enviar(0x1012, NO_EXISTE)

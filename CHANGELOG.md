@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [Segunda pasada] — 2026-11-27 — rama `audit/noviembre-2026`
+
+### Corregido
+
+- **B-15 (Crítica)** `servidor/mundo.py` — `_conexion`: desde Python 3.11 `asyncio.TimeoutError` es `TimeoutError`, así que el ETIMEDOUT del keepalive TCP caía en el plazo de silencio; con la sala en JUGANDO el `continue` volvía a un `read()` que fallaba al instante sin ceder el lazo y **congelaba el server entero** (el Docker usa 3.13). Ahora, si el lector tiene una excepción, se corta la conexión. El `except` externo pasa a `OSError` (incluye `ConnectionError` y `TimeoutError`).
+- **B-11 (Media)** `servidor/partida.py` — `_acreditar`: regresión de B-2v2. Tras el 0x3232 la sala vuelve a ESPERA y la casilla libre la puede tomar alguien que no jugó, que cobraba esa fila. `empezar()` guarda `x.en_partida` (casilla → Eñeños ID) y sólo se paga si coincide.
+- **B-16 (Media)** `servidor/sesion.py` — `enviar`: el buffer de salida de una conexión que no lee crecía sin límite (DoS de memoria con chat o túnel). Pasado `TOPE_SALIDA` (2 MB) se corta con `abort()`.
+- **B-12 (Baja)** `servidor/sala.py` — `crear`: el cupo se recorta a 1..8, como en `cambiar_cupo` (con cupo 20 entraban 10 y `leer_resultado` rechazaba el premio).
+- **B-13 (Baja)** `servidor/base.py` — `sumar`: oro, cash y GP con techo 0xFFFFFFFF (el cliente los lee como u32 y los mostraba dados vuelta).
+- **B-14 (Baja)** `servidor/pase.py` — `comprobar`: cabecera o carga JSON que no es objeto → «pase mal formado» (antes `AttributeError` → 500).
+- **B-17 (Baja)** `servidor/entrada.py` — `login`: usuario con dígitos no ASCII («²») ya no tira `ValueError` sin respuesta; recibe 0x1012.
+
+### Añadido
+
+- `pruebas/probar_audit.py`: +13 pruebas (B-12 a B-17). `pruebas/probar_premio.py`: +4 (B-11).
+
+### Sin corregir (anotado)
+
+- `servidor/broker.py` — `ip_a_anunciar`: si `GB_IP_PUBLICA` es un nombre, `gethostbyname` bloquea el lazo en cada 0x1100. Con una IP literal no pasa; resolver en cada pedido parece buscado (IP dinámica).
+- `servidor/ajustes.py` — `GB_ORO_INICIAL` negativo o `GB_BOLETO_HORAS <= 0` se aceptan sin validar (lo controla el operador).
+- Si la llave se va entre el fin y el 0x4412, nadie manda el premio. Hay que medirlo en la mesa.
+
 ## [2v2/3v3 fix] — 2026-11-27 — rama `audit/noviembre-2026`
 
 ### Corregido

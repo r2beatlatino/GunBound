@@ -119,6 +119,28 @@ with ServerDePrueba(oro_inicial=1000) as srv:
     b.igual(saldo(srv, 90000062), (0, 1020), "B-2v2 race: perdedor: 0 GP, +20 oro")
     b.igual(saldo(srv, 90000064), (0, 1020), "B-2v2 race: otro perdedor: 0 GP, +20 oro")
 
+    # B-11: tras el 0x3232 la sala está en ESPERA; el que entra a la casilla libre no cobra la fila de otro
+    a, c = entrar(srv, 90000071), entrar(srv, 90000072)
+    a.mandar(0x2120, con_largo("Intruso") + AJUSTES + bytes(4) + b"\x02")
+    sid = a.esperar(0x2121)[3:5]
+    c.mandar(0x2110, bytes(sid))
+    c.esperar(0x2111)
+    a.mandar(0x3430, b"")
+    a.esperar(0x3432), c.esperar(0x3432)
+    morir(c)
+    b.ver(a.esperar(0x4410, 0.5) is not None, "B-11: muere la casilla 1 → fin")
+    c.mandar(0x3232, b"")
+    c.esperar(0x3233, 0.3)
+    c.cerrar()
+    d = entrar(srv, 90000073)
+    d.mandar(0x2110, bytes(sid))
+    b.ver(d.esperar(0x2111, 0.5) is not None, "B-11: con la sala en ESPERA entra otro (toma la casilla 1)")
+    a.mandar_cifrado(0x4412, resultado([(0, 200, 0, 4, 0, 0, 1), (1, 300, 0, 3, 0, 0, 0)]))
+    a.esperar(0x4413, 0.5)
+    a.cerrar(); d.cerrar()
+    b.igual(saldo(srv, 90000071), (4, 1200), "B-11: la llave, que jugó, cobra")
+    b.igual(saldo(srv, 90000073), (0, 1000), "B-11: control: el que entró después no cobra la fila de la casilla 1")
+
 b.igual(partida.leer_resultado(resultado([(0, 1, 0, 1, 0, 0, 1), (0, 1, 0, 1, 0, 0, 1)])), None,
         "control: casillas repetidas → se descarta")
 b.igual(len(partida.leer_resultado(resultado([(i, 1, 0, 1, 0, 0, i % 2) for i in range(8)]) + bytes(10))), 8,

@@ -212,8 +212,9 @@ class Base:
         self.con.execute("UPDATE jugadores SET avatar=? WHERE enenos_id=?", (bytes(avatar), int(enenos_id)))
 
     def sumar(self, enenos_id, oro=0, cash=0, gp=0, motivo="", quien=""):
-        """Suma (o resta) y nunca deja nada negativo: lo que no alcanza queda en 0."""
-        self.con.execute("UPDATE jugadores SET oro=MAX(0, oro+?), cash=MAX(0, cash+?), gp=MAX(0, gp+?) WHERE enenos_id=?",
+        """Suma (o resta) entre 0 y el tope de un DWORD (el cliente los lee como u32): lo que no alcanza queda en 0."""
+        self.con.execute("UPDATE jugadores SET oro=MIN(4294967295, MAX(0, oro+?)), cash=MIN(4294967295, MAX(0, cash+?)), "
+                         "gp=MIN(4294967295, MAX(0, gp+?)) WHERE enenos_id=?",
                          (int(oro), int(cash), int(gp), int(enenos_id)))
         self.anotar(enenos_id, "saldo", f"oro{oro:+d} cash{cash:+d} gp{gp:+d} {motivo}".strip(), quien=quien)
 

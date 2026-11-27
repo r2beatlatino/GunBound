@@ -122,6 +122,7 @@ def empezar(mundo, s, cuerpo, solo=False):
     x.caidos = set()                                   # casillas muertas AHORA (las que reaparecen salen)
     x.bajas = [0, 0]                                   # Score: muertes del equipo A y del B
     x.equipos = {o.casilla: o.equipo for o in x.jugadores}
+    x.en_partida = {o.casilla: o.enenos_id for o in x.jugadores}
     x.vidas = vidas_del_score(len(x.jugadores))
     x.ganador = None
     inicio = armar_inicio(mundo, x, bytes(cuerpo), solo=solo)
@@ -272,6 +273,10 @@ def _acreditar(mundo, x, filas):
     for casilla, oro, evento, gp, tiros, dano, res in filas:
         o = por_casilla.get(casilla)
         if o is None or o.jugador is None:
+            continue
+        if getattr(x, "en_partida", {}).get(casilla) != o.enenos_id:
+            # tras el 0x3232 la sala vuelve a ESPERA y la casilla puede tenerla alguien que no jugó
+            log("PREMIO", f"⚠ sala {x.id} {o.nick}: casilla {casilla} no era suya en la partida, no se acredita")
             continue
         if not (PISO_GP <= gp <= TOPE_GP and PISO_ORO <= oro <= TOPE_ORO):
             log("PREMIO", f"⚠ sala {x.id} {o.nick}: {gp:+d} GP {oro:+d} oro FUERA DE RANGO, no se acredita")

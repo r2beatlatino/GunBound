@@ -24,7 +24,8 @@
 
 **Línea base pre-auditoría:** 363 pruebas verdes (sin `probar_audit.py`).  
 **Post-auditoría nov-2026:** 386 pruebas verdes (+23 nuevas de regresión).  
-**Post-fix B-2v2:** 392 pruebas verdes (+6 nuevas para race condition 2v2/3v3).
+**Post-fix B-2v2:** 392 pruebas verdes (+6 nuevas para race condition 2v2/3v3).  
+**Segunda pasada (B-11 a B-17):** 409 pruebas verdes en Python 3.10 y 3.14 (`probar_audit` 36, `probar_premio` 20). B-15 sólo se reproduce con Python ≥ 3.11: con 3.14 y sin el fix el lazo se congela.
 
 ## Nuevas pruebas de regresión (`pruebas/probar_audit.py`)
 

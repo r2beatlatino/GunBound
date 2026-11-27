@@ -97,6 +97,11 @@ class Mundo:
                 try:
                     pedazo = await asyncio.wait_for(lector.read(4096), timeout=SILENCIO_MAXIMO)
                 except asyncio.TimeoutError:
+                    # desde 3.11 asyncio.TimeoutError ES TimeoutError: el ETIMEDOUT del keepalive también cae acá,
+                    # y con `continue` el read() volvería a fallar al instante sin ceder el lazo (server congelado)
+                    if lector.exception() is not None:
+                        log("MUNDO", f"{s}: conexión cortada ({lector.exception()!r})")
+                        break
                     # ⚠ Jugando con P2P directo el cliente NO manda nada por TCP (no tiene keepalive propio:
                     # sólo se entera de un corte por FD_CLOSE). Cortar acá echaría de una partida larga a todos.
                     # A ése lo vigila el keepalive TCP del sistema (_keepalive), no este plazo.
@@ -109,7 +114,7 @@ class Mundo:
                 for crudo in cortador.meter(pedazo):
                     self.atender(s, crudo)
                 await escritor.drain()
-        except (ConnectionError, ValueError) as e:
+        except (OSError, ValueError) as e:
             log("MUNDO", f"{s}: conexión cortada ({e})")
         finally:
             self._total_conexiones = max(0, self._total_conexiones - 1)
