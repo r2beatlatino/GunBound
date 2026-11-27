@@ -5,7 +5,7 @@
 ## Resultado del banco completo
 
 ```
-✔ probar_audit:       VERDE · 23 bien, 0 mal   ← NUEVO (esta auditoría)
+✔ probar_audit:       VERDE · 23 bien, 0 mal   ← NUEVO (auditoría nov-2026)
 ✔ probar_azar:        VERDE · 18 bien, 0 mal
 ✔ probar_basicos:     VERDE · 25 bien, 0 mal
 ✔ probar_cliente:     SALTADA · no está C:\GunBound-Legacy\GunBound.exe
@@ -14,16 +14,17 @@
 ✔ probar_lista:       VERDE · 11 bien, 0 mal
 ✔ probar_panel:       VERDE · 82 bien, 0 mal
 ✔ probar_personajes:  VERDE · 28 bien, 0 mal
-✔ probar_premio:      VERDE · 10 bien, 0 mal
+✔ probar_premio:      VERDE · 16 bien, 0 mal   ← +6 (fix B-2v2)
 ✔ probar_rangos:      VERDE · 63 bien, 0 mal
 ✔ probar_sala:        VERDE · 39 bien, 0 mal
 ✔ probar_silencio:    VERDE · 3 bien, 0 mal
 ✔ probar_tienda:      VERDE · 19 bien, 0 mal
-── 0 con rojas · ~44 s
+── 0 con rojas · ~45 s
 ```
 
 **Línea base pre-auditoría:** 363 pruebas verdes (sin `probar_audit.py`).  
-**Post-auditoría:** 386 pruebas verdes (+23 nuevas de regresión).
+**Post-auditoría nov-2026:** 386 pruebas verdes (+23 nuevas de regresión).  
+**Post-fix B-2v2:** 392 pruebas verdes (+6 nuevas para race condition 2v2/3v3).
 
 ## Nuevas pruebas de regresión (`pruebas/probar_audit.py`)
 
@@ -52,12 +53,18 @@
 | B-10-1 | B-10 | Cuando no quedan IDs el server manda 0x5101 |
 | B-08-1 | B-08 | _lugar_libre devuelve None con 255 lugares ocupados |
 | B-08-2 | B-08 | Control: con 254 ocupados devuelve el 254 libre |
+| B-2v2-1 | B-2v2 | 2v2: equipo B muerto → 0x4410 gana A |
+| B-2v2-2 | B-2v2 | 2v2 race: 0x4413 llega a llave aunque los otros mandaron 0x3232 antes |
+| B-2v2-3 | B-2v2 | 2v2 race: llave (ganadora) recibe +3 GP y +150 oro |
+| B-2v2-4 | B-2v2 | 2v2 race: otro ganador (no-llave) también recibe +3 GP y +150 oro |
+| B-2v2-5 | B-2v2 | 2v2 race: perdedor: 0 GP, +20 oro |
+| B-2v2-6 | B-2v2 | 2v2 race: otro perdedor: 0 GP, +20 oro |
 
 ## Cobertura por módulo
 
 | Módulo | Pruebas que lo cubren |
 |--------|----------------------|
-| `partida.py` | probar_audit (B-01, B-04), probar_fin |
+| `partida.py` | probar_audit (B-01, B-04), probar_fin, probar_premio (B-2v2) |
 | `sala.py` | probar_audit (B-02, B-03, B-06, B-10), probar_sala, probar_fin, probar_lista |
 | `comandos.py` | probar_audit (B-05) |
 | `mundo.py` | probar_basicos, probar_silencio |

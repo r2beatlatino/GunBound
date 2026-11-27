@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [2v2/3v3 fix] — 2026-11-27 — rama `audit/noviembre-2026`
+
+### Corregido
+
+- **B-2v2** `servidor/partida.py` — `resultado`: Race condition en modos 2v2 y 3v3 donde los jugadores no-llave enviaban 0x3232 (volver_del_resultado) antes de que la llave enviara 0x4412 (premio). Esto dejaba `sala.estado = ESPERA` prematuramente y el guard `estado == JUGANDO` rechazaba el 0x4412, dejando los premios sin acreditar. Fix: la condición ahora admite `estado == JUGANDO OR ganador is not None`, preservando el flujo normal y cubriendo el caso de race condition.
+
+### Añadido
+
+- `pruebas/probar_premio.py` — 6 nuevas pruebas para el bug B-2v2: fin de partida 2v2, race condition con 0x3232 antes del 0x4412, y verificación de premios para ambos ganadores y perdedores.
+
+---
+
 ## [Auditoría nov-2026] — 2026-11-27 — rama `audit/noviembre-2026`
 
 ### Corregido

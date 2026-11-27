@@ -45,6 +45,24 @@ def partida_de_dos(srv, a_id, c_id, nombre):
     return a, c
 
 
+def morir(r):
+    r.mandar(0x4100, struct.pack("<I", 1) + b"\x01")
+
+
+def partida_de_cuatro(srv, ids, nombre):
+    """4 jugadores (casillas 0-3, equipos A/B/A/B), sala creada y partida empezada."""
+    rs = [entrar(srv, i) for i in ids]
+    rs[0].mandar(0x2120, con_largo(nombre) + AJUSTES + bytes(4) + b"\x04")
+    sid = rs[0].esperar(0x2121)[3:5]
+    for r in rs[1:]:
+        r.mandar(0x2110, bytes(sid))
+        r.esperar(0x2111)
+    rs[0].mandar(0x3430, b"")
+    for r in rs:
+        r.esperar(0x3432)
+    return rs
+
+
 with ServerDePrueba(oro_inicial=1000) as srv:
     a, c = partida_de_dos(srv, 90000041, 90000042, "Premio")
     # ganó la casilla 0 (1vs1: 3 GP + 100 de victoria, más un remate: 1 GP + 100) y perdió la 1
@@ -77,6 +95,29 @@ with ServerDePrueba(oro_inicial=1000) as srv:
     b.ver(p.esperar(0x4413) is not None, "la práctica también cierra")
     p.cerrar()
     b.igual(saldo(srv, 90000045), (0, 1000), "control: la práctica no paga")
+
+    # B-2v2: race condition — los no-llave mandan 0x3232 antes de que la llave mande 0x4412
+    # En 2v2/3v3 esto dejaba estado=ESPERA antes del 0x4412; el premio no se acreditaba.
+    # Fix: resultado() usa ganador is not None en vez de estado == JUGANDO.
+    rs4 = partida_de_cuatro(srv, [90000061, 90000062, 90000063, 90000064], "Race2v2")
+    llave4, r1, r2, r3 = rs4  # equipos: A (casillas 0,2) · B (casillas 1,3)
+    morir(r1)   # casilla 1 muere
+    morir(r3)   # casilla 3 muere → equipo B sin jugadores → ganador = A
+    b.ver(llave4.esperar(0x4410, 0.5) is not None, "B-2v2: equipo B muerto → 0x4410 gana A")
+    for r in [r1, r2, r3]:    # no-llave mandan 0x3232 ANTES que la llave mande 0x4412
+        r.mandar(0x3232, b"")
+        r.esperar(0x3233, 0.3)
+    filas4 = [(0, 150, 0, 3, 0, 0, 1), (1, 20, 0, 0, 0, 0, 0), (2, 150, 0, 3, 0, 0, 1), (3, 20, 0, 0, 0, 0, 0)]
+    llave4.mandar_cifrado(0x4412, resultado(filas4))
+    b.ver(llave4.esperar(0x4413, 0.5) is not None, "B-2v2 race: 0x4413 llega a la llave aunque los otros mandaron 0x3232 antes")
+    llave4.mandar(0x3232, b"")
+    llave4.esperar(0x3233, 0.3)
+    for r in rs4:
+        r.cerrar()
+    b.igual(saldo(srv, 90000061), (3, 1150), "B-2v2 race: llave (ganadora): +3 GP y +150 oro a pesar del 0x3232 previo")
+    b.igual(saldo(srv, 90000063), (3, 1150), "B-2v2 race: otro ganador (no-llave): +3 GP y +150 oro")
+    b.igual(saldo(srv, 90000062), (0, 1020), "B-2v2 race: perdedor: 0 GP, +20 oro")
+    b.igual(saldo(srv, 90000064), (0, 1020), "B-2v2 race: otro perdedor: 0 GP, +20 oro")
 
 b.igual(partida.leer_resultado(resultado([(0, 1, 0, 1, 0, 0, 1), (0, 1, 0, 1, 0, 0, 1)])), None,
         "control: casillas repetidas → se descarta")

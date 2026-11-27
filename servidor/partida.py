@@ -248,14 +248,16 @@ def leer_resultado(datos):
 
 def resultado(mundo, s, cuerpo):
     """0x4412: la llave manda el resultado (lo calculó su cliente). Se acredita oro y GP una vez; todos reciben 0x4413.
-    Sin acreditar: si no lo manda la llave, si no hay partida, si ya se cobró, o si es una /practica (solo)."""
+    Sin acreditar: si no lo manda la llave, si no hay partida activa ni ganador, si ya se cobró, o si es /practica.
+    La condición admite dos estados: estado==JUGANDO (flujo normal, 0x4412 llega antes de cualquier 0x3232)
+    o ganador is not None (flujo con race condition 2v2/3v3: algún no-llave mandó 0x3232 antes del 0x4412)."""
     x = s.sala
     datos, ok = s.descifrar(cuerpo, 0x4412)
     filas = leer_resultado(bytes(datos)) if ok else None
     log("PARTIDA", f"{s.nick} manda el resultado · {len(cuerpo)} bytes · {filas}")
     if x is None:
         return
-    if x.llave is s and x.estado == JUGANDO and not getattr(x, "premio_cobrado", True) and filas:
+    if x.llave is s and (x.estado == JUGANDO or getattr(x, "ganador", None) is not None) and not getattr(x, "premio_cobrado", True) and filas:
         x.premio_cobrado = True
         if getattr(x, "practica", False) or len(x.jugadores) < 2:
             log("PREMIO", f"sala {x.id}: práctica, no se acredita")
