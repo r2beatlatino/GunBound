@@ -100,8 +100,8 @@ def practica(mundo, s, args):
 
 
 def movil(mundo, s, args):
-    if len(args) != 1 or not args[0].isdigit() or int(args[0]) not in list(range(14)) + [17, 18]:
-        _decir(s, "Uso: /movil <0-13, 17 o 18>")
+    if len(args) != 1 or not args[0].isdigit() or int(args[0]) not in list(range(16)) + [17, 18]:
+        _decir(s, "Uso: /movil <0-15, 17 o 18>")
         return
     s.movil1 = int(args[0])
     _decir(s, f"Movil principal: {args[0]}")

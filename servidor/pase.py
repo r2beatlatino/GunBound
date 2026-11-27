@@ -88,6 +88,8 @@ class Verificador:
             firma = _de_b64u(partes[2])
         except (ValueError, TypeError):
             return None, "pase mal formado"
+        if not isinstance(cab, dict) or not isinstance(carga, dict):
+            return None, "pase mal formado"
         if cab.get("alg") != "EdDSA":
             return None, "algoritmo no aceptado"
         if not ed.verificar(self.clave, (partes[0] + "." + partes[1]).encode("ascii"), firma):
@@ -122,8 +124,15 @@ class Verificador:
         for j, e in list(self._usados.items()):
             if e + TOLERANCIA_RELOJ < ahora:
                 del self._usados[j]
-        while len(self._usados) >= MAX_RECORDADOS:          # tope duro: se va el más viejo
-            self._usados.pop(next(iter(self._usados)))
+        # Si después de limpiar los vencidos el diccionario sigue lleno, el sistema está bajo ataque de pases
+        # únicos. El tope duro saca los VENCIDOS más viejos primero; si todos son vigentes (anómalo), se
+        # conservan para evitar crear ventanas de replay.
+        if len(self._usados) >= MAX_RECORDADOS:
+            expirados = sorted((e, j) for j, e in self._usados.items() if e + TOLERANCIA_RELOJ < ahora)
+            for _, j in expirados:
+                if len(self._usados) < MAX_RECORDADOS:
+                    break
+                del self._usados[j]
 
 
 # ── para pruebas y para el laboratorio: firmar pases con una clave de prueba ─────────────────────────────────

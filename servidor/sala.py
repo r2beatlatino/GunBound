@@ -157,10 +157,11 @@ def crear(mundo, s, cuerpo):
     resto = cuerpo[1 + n:]
     sid = _id_libre(mundo)
     if sid is None or len(resto) < 9:
-        log("SALA", f"{s.nick} no puede crear la sala: {'no quedan números' if sid is None else 'pedido corto'}"
-                    f" · {bytes(cuerpo[:32]).hex()}")
+        motivo = "no quedan números de sala" if sid is None else "pedido corto"
+        log("SALA", f"{s.nick} no puede crear la sala: {motivo} · {bytes(cuerpo[:32]).hex()}")
+        s.enviar(0x5101, motivo.encode("latin-1"))
         return
-    x = Sala(sid, titulo, texto_c(resto[4:8]), resto[0:4], resto[8], s)
+    x = Sala(sid, titulo, texto_c(resto[4:8]), resto[0:4], max(1, min(resto[8], 8)), s)
     mundo.salas[sid] = x
     canal.avisar_salida(mundo, s)
     _poner(s, x, casilla=0, equipo=0)
@@ -255,15 +256,21 @@ def _sala_de_la_llave(s):
     return s.sala if s.sala is not None and s.sala.llave is s else None
 
 
-def cambiar_mapa(mundo, s, cuerpo):
+def _llave_en_espera(s):
+    """La sala del anfitrión sólo si está en ESPERA (no se toca la config durante la partida)."""
     x = _sala_de_la_llave(s)
+    return x if x is not None and x.estado == ESPERA else None
+
+
+def cambiar_mapa(mundo, s, cuerpo):
+    x = _llave_en_espera(s)
     if x is not None and cuerpo:
         x.mapa = cuerpo[0]
     s.enviar(0x3105, b"", rtc=0)
 
 
 def cambiar_ajustes(mundo, s, cuerpo):
-    x = _sala_de_la_llave(s)
+    x = _llave_en_espera(s)
     if x is not None and len(cuerpo) >= 4:
         x.ajustes = bytes(cuerpo[:4])
     s.enviar(0x3105, b"", rtc=0)
@@ -274,14 +281,14 @@ def cambiar_items(mundo, s, cuerpo):
 
 
 def cambiar_cupo(mundo, s, cuerpo):
-    x = _sala_de_la_llave(s)
+    x = _llave_en_espera(s)
     if x is not None and cuerpo and len(x.jugadores) <= cuerpo[0] <= 8:
         x.cupo = cuerpo[0]
     s.enviar(0x3105, b"", rtc=0)
 
 
 def cambiar_titulo(mundo, s, cuerpo):
-    x = _sala_de_la_llave(s)
+    x = _llave_en_espera(s)
     if x is not None:
         x.nombre = texto_c(cuerpo)[:40]
     s.enviar(0x3105, b"", rtc=0)
@@ -293,9 +300,14 @@ def elegir_equipo(mundo, s, cuerpo):
     s.enviar(0x3211, b"", rtc=0)
 
 
+_MOVILES_VALIDOS = set(range(16)) | {17, 18, AL_AZAR}   # 0-15 normales + especiales + AL_AZAR (0xFF)
+
+
 def elegir_movil(mundo, s, cuerpo):
     if s.sala is not None and len(cuerpo) >= 2:
-        s.movil1, s.movil2 = cuerpo[0], cuerpo[1]
+        m1, m2 = cuerpo[0], cuerpo[1]
+        if m1 in _MOVILES_VALIDOS and m2 in _MOVILES_VALIDOS:
+            s.movil1, s.movil2 = m1, m2
     s.enviar(0x3201, b"", rtc=0)
 
 
@@ -306,8 +318,10 @@ def listo(mundo, s, cuerpo):
 
 
 def volver_del_resultado(mundo, s, cuerpo):
-    if s.sala is not None:
-        s.sala.estado = ESPERA
+    # Solo se acepta cuando la partida ya tiene ganador (pantalla de resultados), no durante el juego.
+    x = s.sala
+    if x is not None and getattr(x, "ganador", None) is not None:
+        x.estado = ESPERA
     s.enviar(0x3233, b"", rtc=0)
 
 

@@ -43,6 +43,7 @@ class Mundo:
         self.base = base
         self.boletos = boletos
         self.sesiones = []                   # las conexiones con login hecho
+        self._total_conexiones = 0           # todas las conexiones activas (pre-login incluidas)
         self.salas = {}                      # id -> Sala
         self.mapas = {m["map_id"]: m for m in json.loads((ajustes_dir(ajustes) / "mapas.json").read_text("utf-8"))}
         self.precios = json.loads((ajustes_dir(ajustes) / "precios_avatar.json").read_text("utf-8"))["prices"]
@@ -77,9 +78,10 @@ class Mundo:
 
     # ── una conexión ──────────────────────────────────────────────────────────────────────────────────────
     async def _conexion(self, lector, escritor):
-        if len(self.sesiones) >= self.aj.max_conexiones:
+        if self._total_conexiones >= self.aj.max_conexiones:
             escritor.close()
             return
+        self._total_conexiones += 1
         sock = escritor.get_extra_info("socket")
         if sock is not None:
             try:
@@ -95,6 +97,11 @@ class Mundo:
                 try:
                     pedazo = await asyncio.wait_for(lector.read(4096), timeout=SILENCIO_MAXIMO)
                 except asyncio.TimeoutError:
+                    # desde 3.11 asyncio.TimeoutError ES TimeoutError: el ETIMEDOUT del keepalive también cae acá,
+                    # y con `continue` el read() volvería a fallar al instante sin ceder el lazo (server congelado)
+                    if lector.exception() is not None:
+                        log("MUNDO", f"{s}: conexión cortada ({lector.exception()!r})")
+                        break
                     # ⚠ Jugando con P2P directo el cliente NO manda nada por TCP (no tiene keepalive propio:
                     # sólo se entera de un corte por FD_CLOSE). Cortar acá echaría de una partida larga a todos.
                     # A ése lo vigila el keepalive TCP del sistema (_keepalive), no este plazo.
@@ -107,9 +114,10 @@ class Mundo:
                 for crudo in cortador.meter(pedazo):
                     self.atender(s, crudo)
                 await escritor.drain()
-        except (ConnectionError, ValueError) as e:
+        except (OSError, ValueError) as e:
             log("MUNDO", f"{s}: conexión cortada ({e})")
         finally:
+            self._total_conexiones = max(0, self._total_conexiones - 1)
             self.desconectar(s)
 
     def atender(self, s, crudo):
