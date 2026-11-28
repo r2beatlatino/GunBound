@@ -126,6 +126,8 @@ def empezar(mundo, s, cuerpo, solo=False):
     x.vidas = vidas_del_score(len(x.jugadores))
     x.ganador = None
     inicio = armar_inicio(mundo, x, bytes(cuerpo), solo=solo)
+    if mundo.aj.traza:
+        log("TRAZA", f"sala {x.id}: 0x3432 en claro {inicio.hex()}")
     for o in x.jugadores:
         o.enviar_cifrado(0x3432, inicio)
 

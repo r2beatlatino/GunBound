@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [2v2/3v3 con el juego de verdad] — 2026-11-28 — rama `audit/noviembre-2026`
+
+Probado con 4 clientes reales en la mesa (`herramientas/mesa.py`, túnel, traza).
+
+### Corregido
+
+- **B-18 (Alta)** `servidor/sala.py` — `entrar`: el `0x2111` mandaba fijos `00 01` donde el cliente lee **casilla de la llave** y **mi casilla** (`[G+0x1A640]`, `[G+0x1A634]`, 0x4CB92D–0x4CB961). Con dos jugadores coincide siempre; desde el 3.º cada invitado se creía la casilla 1: se mandaba P2P a sí mismo, nadie le hablaba a la casilla 1 real y los lugares y turnos quedaban cruzados (el «3 se juntan y se bugean» del 2vs2/3vs3). Ahora van la llave y la casilla de cada uno. Verificado con la traza del túnel: cada uno le habla a las otras 3 casillas.
+- **B-19 (Media)** `servidor/sala.py` — `entrar` / `crear`: los rechazos (sala cerrada, llena, jugando, clave mala, ya en sala) sólo iban por el chat; el cliente se quedaba con la pantalla atenuada esperando el `0x2111`/`0x2121`. Ahora va también el RTC que el cliente sabe mostrar (tabla 0x445D70, textos de `language.txt`).
+
+### Medido (sin cambio de código)
+
+- El Start del master **no manda nada** si el master es GM (rango 0x19) o si alguno no está en Ready (`0x5167C0`). En el laboratorio GB90000001 es GM: por eso «no arrancaba». Con un master no GM arranca al primer clic. ⚠ En prod, una cuenta en `GB_GM` no puede arrancar una sala propia.
+- Con las ventanas de la mesa en segundo plano los turnos se separan incluso en 1vs1: el cliente retiene `0xC300/0xC306` hasta que termina la animación local. Es un límite de la mesa; los turnos hay que medirlos con PCs distintas.
+
+### Añadido
+
+- `GB_TRAZA=1` anota el `0x3432` en claro. Pruebas: `probar_audit` (B-18, B-19), `probar_sala` (llave y casilla en el 0x2111, rechazos con RTC).
+
 ## [Segunda pasada] — 2026-11-27 — rama `audit/noviembre-2026`
 
 ### Corregido

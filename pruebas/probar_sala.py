@@ -47,6 +47,7 @@ with ServerDePrueba(p2p="tunel") as srv:
     c.mandar(0x2110, b"\0\0" + b"lo")
     b.ver(c.esperar(0x21F5) is not None, "0x21F5 antes de la entrada")
     ent = c.esperar(0x2111)
+    b.igual((ent[2], ent[3]), (0, 1), "0x2111: casilla de la llave (0) y la mía (1) — [G+0x1A640] y [G+0x1A634]")
     nlen = ent[6]
     p = 7 + nlen + 1 + 4 + 8
     b.igual((ent[p], ent[p + 1]), (2, 2), "0x2111: cupo y cantidad")
@@ -64,7 +65,9 @@ with ServerDePrueba(p2p="tunel") as srv:
     # control: una sala llena no deja entrar a un tercero
     d = entrar(srv, 90000003)
     d.mandar(0x2110, b"\0\0")
-    b.ver(d.esperar(0x2111, 0.6) is None, "control: con la sala llena no hay 0x2111")
+    rechazo = d.esperar(0x2111, 0.6)
+    b.igual(bytes(rechazo[:2]) if rechazo is not None else None, b"\x01\x20",
+            "con la sala llena: 0x2111 con RTC 0x2001 (cartel 212), no silencio (el cliente quedaba atenuado)")
     b.ver(d.esperar(0x5101, 0.6) is not None, "control: se le avisa por el chat del sistema")
 
     # ── el túnel: 0x4500 [01 00][casilla destino][datagrama] → 0x4501 [casilla de quien manda][datagrama] ───
@@ -127,7 +130,9 @@ with ServerDePrueba() as srv:
     b.ver(a.esperar(0x3432, 0.3) is None, "control: ya jugando, no arranca de nuevo")
     # control: todavía en la sala, «Create» no se atiende (es lo que veía Eñeños sin el arreglo)
     a.mandar(0x2120, con_largo("Otra") + AJUSTES_SOLO + bytes(4) + b"\x02")
-    b.ver(a.esperar(0x2121, 0.4) is None, "control: adentro de una sala no se crea otra")
+    otra = a.esperar(0x2121, 0.4)
+    b.igual(bytes(otra[:2]) if otra is not None else None, b"\x03\x20",
+            "control: adentro de una sala no se crea otra (0x2121 con RTC 0x2003)")
     # ABANDONAR la partida: el Legacy manda 0x2000 (volver al canal) y NO 0x3001 (medido 16-nov)
     # ⚠ el 0x2001 del LOGIN sigue en la cola: sin vaciarla, el esperar de abajo lo toma a él y la sala se mira antes
     #   de que el server atienda el 0x2000 (18-nov: rojo en el Docker de Linux, verde por suerte en Windows)
