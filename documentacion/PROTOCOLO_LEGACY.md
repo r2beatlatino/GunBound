@@ -33,7 +33,9 @@ usuario + contraseña + ficha (4 bytes del 0x1001), truncado a 16, DWORDs dados 
 |---|---|---|
 | 0x2103 (lista) | rtc · cantidad (byte) · 0 · hasta 9 renglones: id WORD · largo+nombre · mapa · ajustes(4) · **2 bytes** · jugadores · cupo · jugando · con clave | lector 0x4CB55A (sin los 2 bytes: «FULL 0/0») |
 | 0x2120 (crear) | largo+título · ajustes(4) · clave(4) · cupo | traza |
-| 0x2111 (entrar) | rtc · 00 01 · id WORD · largo+nombre · mapa · ajustes(4) · 8×FF · cupo · cantidad · fichas de 49 | lector 0x4CB8C5 |
+| 0x2111 / 0x2121 rechazo | **rtc ≠ 0 y nada más**: 0x2001 sala llena (cartel 212) · 0x2002 no se crea (213) · 0x2003 ya en sala (214) · 0x2004 ya empezó (215) · 0x11 clave mala (205). Sin respuesta el cliente queda atenuado esperando (medido 28-nov con la mesa) | tabla 0x445D70 + `language.txt` |
+| botón Start (0x511D92) | sólo si yo soy la llave y `0x5167C0` da sí: **mi rango ≠ 0x19 (GM no puede arrancar)** · ≤ 4 por equipo (y parejos si la sala lo pide) · los demás en estado 3 = Ready (llega por P2P `0x8102 [estado]`). Si no, no manda nada | 0x5167C0 |
+| 0x2111 (entrar) | rtc · **casilla de la llave · mi casilla** (`[G+0x1A640]`, `[G+0x1A634]`, 0x4CB92D–0x4CB961; no son fijos «00 01») · id WORD · largo+nombre · mapa · ajustes(4) · 8×FF · cupo · cantidad · fichas de 49 | lector 0x4CB8C5 |
 | ficha de ocupante | casilla · nick(12) · **género** · IP · puerto · IP · puerto · móvil 1 · móvil 2 · equipo · **listo** · avatar(8) · 4 WORD (rangos; +5 a los 3 primeros) · cantidad de piezas extra WORD + DWORD c/u · **1 byte** | lector 0x4CBA60 |
 | 0x3010 (llegó alguien, al resto) | la misma ficha **sin «listo» ni el byte final** (47) | lector 0x4102E0 |
 | ajustes de la sala | 4 bytes del cliente; [2] = modo (00 solo · 44 score · 08 tag · 0C jewel), bit 0 = lado | traza |

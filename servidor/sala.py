@@ -8,8 +8,10 @@ Los AJUSTES de la sala son 4 bytes que el server no interpreta: los arma el clie
 El byte [2] lleva el modo: 0x00 solo · 0x44 score · 0x08 tag · 0x0C jewel. Su bit 0 = el lado del mapa (A/B).
 
 La entrada a una sala (0x2111), medida en el Legacy (rama 0x004CB8C5):
-    WORD resultado · 2 bytes de estado · WORD sala · BYTE largo + nombre · mapa · ajustes (4) · 8 bytes ·
-    cupo · cantidad · y una ficha por ocupante
+    WORD resultado · casilla de la LLAVE ([G+0x1A640]) · MI casilla ([G+0x1A634]) · WORD sala ·
+    BYTE largo + nombre · mapa · ajustes (4) · 8 bytes · cupo · cantidad · y una ficha por ocupante
+    ⚠ Hasta el 28-nov iban fijos «00 01»: con dos jugadores coincide siempre, pero desde el 3.º cada uno se creía la
+      casilla 1 (túnel a sí mismo, turnos y lugares cruzados: el 2vs2/3vs3 «se bugeaba»). Medido 0x4CB92D–0x4CB961.
 La ficha de cada ocupante: ver `ficha_ocupante` (medida con dos clientes).
 """
 import time
@@ -22,6 +24,12 @@ from .sesion import AL_AZAR, SIN_LUGAR
 ESPERA, JUGANDO = 0, 1
 VEDA_DEL_NUMERO = 330              # s sin volver a usar el número de una sala cerrada (el cliente veda 300 s)
 PUERTO_P2P = 8363                  # el cliente escucha UDP acá para hablar con los otros de la sala
+# RTC de rechazo en 0x2111/0x2121 → cartel de language.txt (tabla 0x445D70, GM_COMANDOS_Y_EXTRAS.md §2.2)
+RTC_CLAVE_MALA = 0x11              # 205 «Wrong password»
+RTC_SALA_LLENA = 0x2001            # 212 «Too many users in the room. Please try a different room»
+RTC_NO_SE_CREA = 0x2002            # 213 «Can't create a room»
+RTC_YA_EN_SALA = 0x2003            # 214 «You are already inside the room»
+RTC_YA_EMPEZO = 0x2004             # 215 «The game has already started. You cannot enter»
 
 
 class Sala:
@@ -147,10 +155,12 @@ def detalle(mundo, s, cuerpo):
 def crear(mundo, s, cuerpo):
     """0x2120: [largo][título] + ajustes (4) + clave (4) + cupo (1)."""
     if s.sala is not None:
-        log("SALA", f"{s.nick} pide crear una sala pero el server lo tiene en la sala {s.sala.id}: se ignora")
+        log("SALA", f"{s.nick} pide crear una sala pero el server lo tiene en la sala {s.sala.id}: se rechaza")
+        s.enviar(0x2121, b"", rtc=RTC_YA_EN_SALA)
         return
     if not cuerpo:
         log("SALA", f"{s.nick} pide crear una sala sin datos")
+        s.enviar(0x2121, b"", rtc=RTC_NO_SE_CREA)
         return
     n = cuerpo[0]
     titulo = cuerpo[1:1 + n].decode("latin-1")
@@ -160,6 +170,7 @@ def crear(mundo, s, cuerpo):
         motivo = "no quedan números de sala" if sid is None else "pedido corto"
         log("SALA", f"{s.nick} no puede crear la sala: {motivo} · {bytes(cuerpo[:32]).hex()}")
         s.enviar(0x5101, motivo.encode("latin-1"))
+        s.enviar(0x2121, b"", rtc=RTC_NO_SE_CREA)
         return
     x = Sala(sid, titulo, texto_c(resto[4:8]), resto[0:4], max(1, min(resto[8], 8)), s)
     mundo.salas[sid] = x
@@ -172,32 +183,34 @@ def crear(mundo, s, cuerpo):
 def entrar(mundo, s, cuerpo):
     """0x2110: [sala WORD][clave]."""
     if s.sala is not None or len(cuerpo) < 2:
-        log("SALA", f"{s.nick} pide entrar a una sala y se ignora: "
+        log("SALA", f"{s.nick} pide entrar a una sala y se rechaza: "
                     f"{f'el server lo tiene en la sala {s.sala.id}' if s.sala is not None else 'pedido corto'}"
                     f" · {bytes(cuerpo[:16]).hex()}")
+        s.enviar(0x2111, b"", rtc=RTC_YA_EN_SALA if s.sala is not None else RTC_SALA_LLENA)
         return
     sid = cuerpo[0] | (cuerpo[1] << 8)
     clave = texto_c(cuerpo[2:])
     x = mundo.salas.get(sid)
-    motivo = None
+    motivo = rtc = None
     if x is None:
-        motivo = "esa sala ya no existe"
+        motivo, rtc = "esa sala ya no existe", RTC_SALA_LLENA       # no hay cartel de «no existe»
     elif x.estado != ESPERA:
-        motivo = "la sala está jugando"
+        motivo, rtc = "la sala está jugando", RTC_YA_EMPEZO
     elif len(x.jugadores) >= x.cupo or x.casilla_libre() is None:
-        motivo = "la sala está llena"
+        motivo, rtc = "la sala está llena", RTC_SALA_LLENA
     elif x.clave and clave != x.clave:
-        motivo = "clave equivocada"
+        motivo, rtc = "clave equivocada", RTC_CLAVE_MALA
     if motivo:
-        # ⚠ el código de rechazo del Legacy no está medido: se avisa por el chat del sistema y no se entra
+        # ⚠ sin el 0x2111 con RTC el cliente se queda esperando con la pantalla atenuada (medido 28-nov con la mesa)
         s.enviar(0x5101, motivo.encode("latin-1"))
+        s.enviar(0x2111, b"", rtc=rtc)
         log("SALA", f"{s.nick} no entra a la sala {sid}: {motivo}")
         return
     canal.avisar_salida(mundo, s)
     _poner(s, x, casilla=x.casilla_libre(), equipo=x.equipo_para_el_nuevo())
     log("SALA", f"{s.nick} entra a la sala {sid} (casilla {s.casilla}, equipo {'AB'[s.equipo]})")
     s.enviar(0x21F5, b"\x03", rtc=0)
-    r = bytearray(u16(0) + u16(0x0100) + u16(x.id) + con_largo(x.nombre) + u8(x.mapa) + x.ajustes + b"\xFF" * 8
+    r = bytearray(u16(0) + u8(x.llave.casilla) + u8(s.casilla) + u16(x.id) + con_largo(x.nombre) + u8(x.mapa) + x.ajustes + b"\xFF" * 8
                   + u8(x.cupo) + u8(len(x.jugadores)))
     for o in x.jugadores:
         r += ficha_ocupante(o)

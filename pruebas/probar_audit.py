@@ -303,6 +303,36 @@ with ServerDePrueba(p2p="tunel") as srv:
     b.ver(r.esperar(0x1012, 1.0) is not None, "B-17: usuario «²» (isdigit pero no int) → 0x1012, no silencio")
     r.cerrar()
 
+# ── B-18: el 0x2111 lleva la casilla de la llave y la propia (antes «00 01» fijo: desde el 3.º todos eran la 1) ──
+# ── B-19: un rechazo al entrar va como 0x2111 con RTC (sin él el cliente se queda atenuado esperando) ─────────
+with ServerDePrueba(p2p="tunel") as srv:
+    a, c, d = entrar(srv, 90001101), entrar(srv, 90001102), entrar(srv, 90001103)
+    a.mandar(0x2120, con_largo("Casillas") + SOLO + bytes(4) + b"\x04")
+    sid = bytes(a.esperar(0x2121)[3:5])
+    c.mandar(0x2110, sid)
+    e1 = c.esperar(0x2111)
+    d.mandar(0x2110, sid)
+    e2 = d.esperar(0x2111)
+    b.igual((e1[2], e1[3]), (0, 1), "B-18: el 2.º que entra: llave 0, yo 1")
+    b.igual((e2[2], e2[3]), (0, 2), "B-18: el 3.º que entra: llave 0, yo 2 (antes le llegaba 1)")
+    a.mandar(0x3001, b"\xff\xff")                          # se va la llave: pasa a la casilla 1
+    a.esperar(0x2001, 0.5)
+    f = entrar(srv, 90001104)
+    f.mandar(0x2110, sid)
+    e3 = f.esperar(0x2111)
+    b.igual((e3[2], e3[3]), (1, 0), "B-18: después de irse la llave: llave 1 (la nueva), yo 0 (la casilla libre)")
+    for r in (c, d, f):
+        r.mandar(0x3001, b"\xff\xff")
+        r.esperar(0x2001, 0.5)
+    g = entrar(srv, 90001105)
+    g.mandar(0x2110, sid)                                   # la sala ya se cerró
+    rechazo = g.esperar(0x2111, 0.6)
+    b.igual(bytes(rechazo[:2]) if rechazo is not None else None, b"\x01\x20",
+            "B-19: sala que ya no existe → 0x2111 con RTC 0x2001, no sólo el aviso del chat")
+    b.ver(g.esperar(0x5101, 0.3) is not None, "B-19: y el aviso del chat con el motivo exacto")
+    for r in (a, c, d, f, g):
+        r.cerrar()
+
 # ── B-14: un pase cuya cabecera JSON no es un objeto se rechaza (antes: AttributeError → 500) ─────────
 from servidor.pase import Verificador
 v = Verificador("gunbound", b"\x00" * 32)
